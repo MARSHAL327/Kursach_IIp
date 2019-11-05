@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <conio.h>
 #include <stdio.h>
+#include <cwchar>
 using namespace std;
 
 //===================
@@ -68,7 +69,8 @@ void find(time_task* beg); // поик элемента по фамилии
 //===================
 int main() {
 	SetColor(0, 0); // устанавливаем цвет текста и заднего фона чёрным
-	
+	::SendMessage(::GetConsoleWindow(), WM_SYSKEYDOWN, VK_RETURN, 0x20000000);
+
 	int item = 0;
 	time_task* beg = 0,
 		* end = 0;
@@ -253,6 +255,9 @@ time_task* print(time_task * beg, int active) {
 			system("cls");
 			return beg;
 			break;
+		case enter:
+			
+			break;
 		}
 	} while (1);
 }
@@ -391,7 +396,43 @@ int write_file(char* filename, time_task * temp) {
 void print_menu(int sym, const string items[]) {
 	const int N_ITEMS = 5;
 
+	//========================
+	//========================
+	//========================
+	HANDLE hCon;
+	COORD cPos;
+	int width = 0, height = 0;
+
+	// вытакиваем ширину и высоту
+	hCon = GetStdHandle(-12);
+	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+	if (GetConsoleScreenBufferInfo(hCon, &consoleInfo))
+	{
+		width = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1;
+		height = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1;
+	}
+
+	// меняем положение меню
+	hCon = GetStdHandle(STD_OUTPUT_HANDLE);
+	cPos.Y = 10;
+	cPos.X = 0;
+	SetConsoleCursorPosition(hCon, cPos);
+
+	// меняем размер шрифта
+	CONSOLE_FONT_INFOEX cfi;
+	cfi.cbSize = sizeof(cfi);
+	cfi.nFont = 0;
+	cfi.dwFontSize.X = 0;                   // Width of each character in the font
+	cfi.dwFontSize.Y = 24;                  // Height
+	cfi.FontFamily = FF_DONTCARE;
+	cfi.FontWeight = FW_NORMAL;
+	SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
+
+	//========================
+	//========================
+	//========================
 	for (int i = 1; i <= N_ITEMS; i++) {
+		
 		SetColor(7, 0);
 		if (i == sym) {
 			SetColor(7, 5);
