@@ -20,7 +20,7 @@ esc = 27,
 del = 83;
 
 //названия пунктов
-const string items[5] = {	"   Ввод данных            ",	"   Печать данных          ",	"   Запись данных в файл   ",	"   Поиск по клонке        ",	"   Выход                  " };
+const string items[5] = {	"   Ввод данных            ",	"   Печать данных          ",	"   Запись данных в файл   ",	"   Поиск по фамилии       ",	"   Выход                  " };
 
 
 //===================
@@ -59,7 +59,7 @@ int read_file(char* filename, time_task** beg, time_task** end); // ЧТЕНИЕ
 int write_file(char* filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
-void find(time_task* beg); // поик элемента по колонке 
+void find(time_task* beg); // поик элемента по фамилии 
 
 
 
@@ -105,8 +105,8 @@ int main() {
 
 				// Поиск элемента
 			case 4:
+				system("cls");
 				find(beg);
-				system("pause");
 				break;
 
 				// выход из программы
@@ -297,43 +297,40 @@ time_task* delete_el(time_task * beg, int num_del) {
 		temp = temp->next;
 	}
 
-	cout << "\nТакого id не существует!";
+	cout << "\nТакого шифр не существует!";
 	return beg;
 }
 
+// ==========ПОИСК ЭЛЕМЕНТА ПО ФАМИЛИИ==========
 void find(time_task* beg) {
 	time_task* temp = beg;
-	int current = 1;
 	string find_el;
+
+	system("cls");
 
 	if (!beg) {
 		cout << "Список пуст" << endl;
 		return;
 	}
 
-	const string items[5] = {	"   Шифр задания   ",	"   Код отдела     ",	"   ФИО            ",	"   Общее время    ",	"   Время ЦП       " };
+	cout << "Введите ФИО сотрудника для поиска" << endl;
+	cin >> find_el;
 
-	while (1) {
-		switch (menu(current, items)) {
-		case 1:
-			cout << "Введите шифр задания" << endl;
-			cin >> find_el;
-
-			while (temp) {
-				if (find_el == temp->d.cipher) {
-					cout << "Тут вывод" << endl;
-					system("pause");
-					return;
-				}
-				temp = temp->next;
-			}
-
-			cout << "такого элемента нет!" << endl;
-			find(beg);
-		default:
-			cout << "такого пункта нет!";
+	while (temp) {
+		if (find_el == temp->d.fio) {
+			cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+			cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
+			cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+			print_info(*temp);
+			cout << "\n+------------------------------------------------------------------------------+-------------------------------+" << endl;
+			cout << endl;
+			system("pause");
+			return;
 		}
+		temp = temp->next;
 	}
+
+	cout << "Сотрудника с такой фамилией нет!" << endl;
 }
 
 // ==========ЧТЕНИЕ ИЗ ФАЙЛА==========
