@@ -19,6 +19,9 @@ enter = 13,
 esc = 27,
 del = 83;
 
+//названия пунктов
+const string items[5] = {	"   Ввод данных            ",	"   Печать данных          ",	"   Запись данных в файл   ",	"   Поиск по клонке        ",	"   Выход                  " };
+
 
 //===================
 // ДАННЫЕ
@@ -47,15 +50,16 @@ struct time_task {
 //===================
 time_task* print(time_task* beg, int active); // ВЫВОД ДАННЫХ
 void print_info(const time_task& t); // ПЕЧАТЬ СОДЕРЖИМОГО
-void print_menu(int sym); // ШАБЛОН ПЕЧАТИ МЕНЮ
+void print_menu(int sym, const string items[]); // ШАБЛОН ПЕЧАТИ МЕНЮ
 time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ
 time_task* input(const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА
 time_task input_info(time_task* beg); // ВВОД ДАННЫХ
 time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
 int read_file(char* filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
 int write_file(char* filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
-int menu(int& active); // МЕНЮ
+int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
+void find(time_task* beg); // поик элемента по колонке 
 
 
 
@@ -74,7 +78,7 @@ int main() {
 	while (1) {
 		int current = 1;
 		while (1) {
-			switch (menu(current)) {
+			switch (menu(current, items)) {
 				// Добавление элемента в список
 			case 1:
 				system("cls");
@@ -99,10 +103,9 @@ int main() {
 				write_file(filename, beg);
 				break;
 
-				// Удаление элемента
+				// Поиск элемента
 			case 4:
-				/*system("cls");
-				beg = delete_el(beg);*/
+				find(beg);
 				system("pause");
 				break;
 
@@ -180,7 +183,7 @@ float percent_time_cpu(float a, float b) {
 
 // ПЕЧАТЬ СОДЕРЖИМОГО
 void print_info(const time_task& t) {
-	cout << "|" << setw((__int64)7 + t.d.cipher.length()) << t.d.cipher;
+	cout << "|" << setw((__int64)1 + t.d.cipher.length()) << t.d.cipher;
 	cout << setw(((__int64)18 - t.d.cipher.length()) + t.d.department_code.length()) << t.d.department_code;
 	cout << setw(((__int64)16 - t.d.department_code.length()) + t.d.fio.length()) << t.d.fio;
 	cout << setw(((__int64)18 - t.d.fio.length()) + t.d.all_time.length()) << t.d.all_time;
@@ -192,24 +195,26 @@ void print_info(const time_task& t) {
 time_task* print(time_task * beg, int active) {
 
 	if (!beg) {
-		cout << "Список пуст" << endl; 
+		cout << "Список пуст" << endl;
 		system("pause");
 		return beg;
 	}
 
 	int sum_all_time = 0,
 		sum_time_cpu = 0,
-		i = 1;
+		i = 1,
+		num_del = 0;
 
 	time_task* temp = beg;
 
-	cout << "+-------------------------------------------------------------------------------------+-------------------------------+" << endl;
-	cout << "|id      Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
-	cout << "+-------------------------------------------------------------------------------------+-------------------------------+" << endl;
+	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+	cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
+	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
 
 	for (; temp; temp = temp->next, i++) {
 		if (i == active) {
 			SetColor(7, 5);
+			num_del = stoi(temp->d.cipher);
 		}
 		print_info(*temp);
 		SetColor(7, 0);
@@ -220,13 +225,13 @@ time_task* print(time_task * beg, int active) {
 		cout << endl;
 	}
 
-	cout << "+-------------------------------------------------------------------------------------+-------------------------------+" << endl;
+	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
 	cout << "Сумма общего времени: " << sum_all_time << endl;
 	cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
-	cout << "+-------------------------------------------------------------------------------------+-------------------------------+" << endl;
+	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
 	
 	// считывание клавиш
-	while (1) {
+	do {
 		switch (_getwch()) {
 		case up: 
 			if (active > 1) {
@@ -244,13 +249,12 @@ time_task* print(time_task * beg, int active) {
 			return beg;
 			break;
 		case del:
-			beg = delete_el(beg, active);
+			beg = delete_el(beg, num_del);
 			system("cls");
 			return beg;
 			break;
 		}
-
-	}
+	} while (1);
 }
 
 // ==========УДАЛЕНИЕ==========
@@ -267,7 +271,6 @@ time_task* delete_el(time_task * beg, int num_del) {
 
 	// если один элемент в списке
 	if (beg->next == 0) {
-		cout << "Удалён последний элемент" << endl;
 		delete temp;
 		return 0;
 	}
@@ -298,6 +301,41 @@ time_task* delete_el(time_task * beg, int num_del) {
 	return beg;
 }
 
+void find(time_task* beg) {
+	time_task* temp = beg;
+	int current = 1;
+	string find_el;
+
+	if (!beg) {
+		cout << "Список пуст" << endl;
+		return;
+	}
+
+	const string items[5] = {	"   Шифр задания   ",	"   Код отдела     ",	"   ФИО            ",	"   Общее время    ",	"   Время ЦП       " };
+
+	while (1) {
+		switch (menu(current, items)) {
+		case 1:
+			cout << "Введите шифр задания" << endl;
+			cin >> find_el;
+
+			while (temp) {
+				if (find_el == temp->d.cipher) {
+					cout << "Тут вывод" << endl;
+					system("pause");
+					return;
+				}
+				temp = temp->next;
+			}
+
+			cout << "такого элемента нет!" << endl;
+			find(beg);
+		default:
+			cout << "такого пункта нет!";
+		}
+	}
+}
+
 // ==========ЧТЕНИЕ ИЗ ФАЙЛА==========
 int read_file(char* filename, time_task **beg, time_task **end) {
 	int k = 0;
@@ -311,13 +349,11 @@ int read_file(char* filename, time_task **beg, time_task **end) {
 
 	time_task t;
 	*beg = 0;
-	//t.d.id = 0;
 	while (getline(fin, t.d.cipher)) {
 		getline(fin, t.d.department_code);
 		getline(fin, t.d.fio);
 		getline(fin, t.d.all_time);
 		getline(fin, t.d.time_cpu);
-		//++t.d.id;
 		if (*beg)
 			* end = input(*end, t);
 		else {
@@ -355,11 +391,9 @@ int write_file(char* filename, time_task * temp) {
 
 
 // ==========ШАБЛОН ПЕЧАТИ МЕНЮ==========
-void print_menu(int sym) {
+void print_menu(int sym, const string items[]) {
 	const int N_ITEMS = 5;
 
-	//названия пунктов
-	string items[N_ITEMS] = {		"   Ввод данных            ", 		"   Печать данных          ", 		"   Запись данных в файл   ", 		"   Удаление               ", 		"   Выход                  "};
 	for (int i = 1; i <= N_ITEMS; i++) {
 		SetColor(7, 0);
 		if (i == sym) {
@@ -371,26 +405,26 @@ void print_menu(int sym) {
 }
 
 // ==========МЕНЮ==========
-int menu(int& active) {
+int menu(int& active, const string items[]) {
 	char buf;
 
 	do {
 		system("CLS");
 		switch (active) {
 		case 1:
-			print_menu(active);
+			print_menu(active, items);
 			break;
 		case 2:
-			print_menu(active);
+			print_menu(active, items);
 			break;
 		case 3:
-			print_menu(active);
+			print_menu(active, items);
 			break;
 		case 4:
-			print_menu(active);
+			print_menu(active, items);
 			break;
 		case 5:
-			print_menu(active);
+			print_menu(active, items);
 			break;
 		}
 		buf = _getwch();
