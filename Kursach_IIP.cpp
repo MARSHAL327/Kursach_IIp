@@ -24,7 +24,6 @@ del = 83;
 // ДАННЫЕ
 //===================
 struct info {
-	string id;
 	string cipher;
 	string department_code;
 	string all_time;
@@ -148,8 +147,6 @@ time_task* input(time_task* end, const time_task& s) {
 time_task input_info(time_task* beg) {
 	time_task t;
 	time_task* temp = beg;
-	int myId = atoi(t.d.id.c_str());
-	int i = 0;
 
 	cout << "Введите шифр задания (8 символов)" << endl;
 	cin >> t.d.cipher;
@@ -171,19 +168,6 @@ time_task input_info(time_task* beg) {
 		else break;
 
 	} while (true);
-
-	// генерируем id
-	if (beg) {
-		while (temp) {
-			i = myId; // запоминаем в i id предпоследнего элемента
-			temp = temp->next;
-		}
-		myId = ++i; // записываем id в последний элемент
-
-	// если это первый элемент
-	} else { 
-		myId++;
-	}
 	system("pause");
 
 	return t;
@@ -196,8 +180,7 @@ float percent_time_cpu(float a, float b) {
 
 // ПЕЧАТЬ СОДЕРЖИМОГО
 void print_info(const time_task& t) {
-	cout << "|" << t.d.id;
-	cout << setw((__int64)7 + t.d.cipher.length()) << t.d.cipher;
+	cout << "|" << setw((__int64)7 + t.d.cipher.length()) << t.d.cipher;
 	cout << setw(((__int64)18 - t.d.cipher.length()) + t.d.department_code.length()) << t.d.department_code;
 	cout << setw(((__int64)16 - t.d.department_code.length()) + t.d.fio.length()) << t.d.fio;
 	cout << setw(((__int64)18 - t.d.fio.length()) + t.d.all_time.length()) << t.d.all_time;
@@ -216,8 +199,7 @@ time_task* print(time_task * beg, int active) {
 
 	int sum_all_time = 0,
 		sum_time_cpu = 0,
-		i = 1,
-		current = 1;
+		i = 1;
 
 	time_task* temp = beg;
 
@@ -283,7 +265,6 @@ time_task* delete_el(time_task * beg, int num_del) {
 
 	temp = beg;
 
-	int myId = stoi(temp->d.id);
 	// если один элемент в списке
 	if (beg->next == 0) {
 		cout << "Удалён последний элемент" << endl;
@@ -292,7 +273,7 @@ time_task* delete_el(time_task * beg, int num_del) {
 	}
 	
 	while (temp) {
-		if (num_del == myId) { // если введённый номер совпал с id
+		if (num_del == stoi(temp->d.cipher)) { // если введённый номер совпал с id
 			buf = temp->next;
 			
 			// если удаляется второй элемент
@@ -331,8 +312,7 @@ int read_file(char* filename, time_task **beg, time_task **end) {
 	time_task t;
 	*beg = 0;
 	//t.d.id = 0;
-	while (getline(fin, t.d.id)) {
-		getline(fin, t.d.cipher);
+	while (getline(fin, t.d.cipher)) {
 		getline(fin, t.d.department_code);
 		getline(fin, t.d.fio);
 		getline(fin, t.d.all_time);
@@ -359,7 +339,6 @@ int write_file(char* filename, time_task * temp) {
 	}
 
 	while (temp) {
-		fout << temp->d.id << endl;
 		fout << temp->d.cipher << endl;
 		fout << temp->d.department_code << endl;
 		fout << temp->d.fio << endl;
