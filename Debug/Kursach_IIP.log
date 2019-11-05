@@ -1,0 +1,3 @@
+﻿  Kursach_IIP.cpp
+D:\Универ\IKT\kursach_IIP\Kursach_IIP.cpp(417): warning C4244: =: преобразование "wint_t" в "char", возможна потеря данных
+  Kursach_IIP.vcxproj -> D:\Универ\IKT\kursach_IIP\Debug\Kursach_IIP.exe
