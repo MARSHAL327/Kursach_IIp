@@ -63,7 +63,7 @@ int write_file(char* filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поик элемента по фамилии 
-void edit(time_task* beg); // редактирование элемента
+void edit(time_task* beg); // редактирование элементаs
 
 
 
@@ -204,74 +204,70 @@ void print_info(const time_task& t, int active) {
 
 // ==========ВЫВОД ДАННЫХ==========
 time_task* print(time_task * beg, int active, int edit_el) {
+	char buf;
 
-	if (!beg) {
-		cout << "Список пуст" << endl;
-		system("pause");
-		return beg;
-	}
-
-	int sum_all_time = 0,
-		sum_time_cpu = 0,
-		i = 1,
-		num_del = 0;
-
-	time_task* temp = beg;
-
-	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
-	cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
-	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
-
-	for (; temp; temp = temp->next, i++) {
-		if (i == active) {
-			SetColor(7, 5);
-			num_del = stoi(temp->d.cipher);
-			print_info(*temp, edit_el);
-		} else {
-			print_info(*temp, 0);
-		}
-		SetColor(7, 0);
-
-		sum_all_time += stoi(temp->d.all_time); // Сумма общего времени
-		sum_time_cpu += stoi(temp->d.time_cpu); // Сумма времени ЦП
-
-		cout << endl;
-	}
-
-	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
-	cout << "Сумма общего времени: " << sum_all_time << endl;
-	cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
-	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
-	
-	if (edit_el == 1) edit(beg);
-
-	// считывание клавиш
 	do {
-		switch (_getwch()) {
-		case up: 
-			if (active > 1 && edit_el != 1) {
-				system("cls");
-				print(beg, --active, 0);
-			}
-			break;
-		case down: 
-			if (active < i - 1 && edit_el != 1) {
-				system("cls");
-				print(beg, ++active, 0);
-			}
-			break;
-		case esc:
+		system("CLS");
+
+		// если пустой список
+		if (!beg) {
+			cout << "Список пуст" << endl;
+			system("pause");
 			return beg;
+		}
+
+		// +++++ОСНОВНОЙ ВЫВОД+++++
+		int sum_all_time = 0,
+			sum_time_cpu = 0,
+			i = 1, // количество записей
+			num_del = 0; // номер для удаления 
+
+		time_task* temp = beg;
+
+		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+		cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
+		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+
+		for (; temp; temp = temp->next, i++) {
+
+			// разукрашивание выбранного элемента
+			if (i == active) {
+				SetColor(7, 5);
+				num_del = stoi(temp->d.cipher);
+				print_info(*temp, edit_el);
+			} else {
+				print_info(*temp, 0);
+			}
+			SetColor(7, 0);
+
+			sum_all_time += stoi(temp->d.all_time); // Сумма общего времени
+			sum_time_cpu += stoi(temp->d.time_cpu); // Сумма времени ЦП
+
+			cout << endl;
+		}
+
+		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+		cout << "Сумма общего времени: " << sum_all_time << endl;
+		cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
+		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+		// +++++++++++++++++
+
+		// считывание клавиш
+		buf = _getwch();
+		switch (buf) {
+		case up:
+			if (active > 1) active--;
+			break;
+		case down:
+			if (active < i - 1) active++;
 			break;
 		case del:
 			beg = delete_el(beg, num_del);
+			active--;
 			system("cls");
+			break;
+		case esc: // клавиша escape
 			return beg;
-			break;
-		case enter:
-			system("cls");
-			print(beg, active, 1);
-			break;
 		}
 	} while (1);
 }
@@ -368,7 +364,8 @@ void find(time_task* beg) {
 		temp = temp->next;
 	}
 
-	cout << "Сотрудника с такой фамилией нет!" << endl;
+	cout << "Сотрудника с такой фамилией не найдено" << endl;
+	system("pause");
 }
 
 // ==========ЧТЕНИЕ ИЗ ФАЙЛА==========
@@ -481,23 +478,8 @@ int menu(int& active, const string items[]) {
 
 	do {
 		system("CLS");
-		switch (active) {
-		case 1:
-			print_menu(active, items);
-			break;
-		case 2:
-			print_menu(active, items);
-			break;
-		case 3:
-			print_menu(active, items);
-			break;
-		case 4:
-			print_menu(active, items);
-			break;
-		case 5:
-			print_menu(active, items);
-			break;
-		}
+		print_menu(active, items);
+
 		buf = _getwch();
 		switch (buf) {
 		case up: // клавиша вверх
