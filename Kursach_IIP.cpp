@@ -16,6 +16,8 @@ char filename[] = "person.txt";
 // коды клавиш
 const int up = 72,
 down = 80,
+right_btn = 77,
+left_btn = 75,
 enter = 13,
 esc = 27,
 del = 83;
@@ -49,8 +51,8 @@ struct time_task {
 //===================
 // ИНТЕРФЕЙС
 //===================
-time_task* print(time_task* beg, int active); // ВЫВОД ДАННЫХ
-void print_info(const time_task& t); // ПЕЧАТЬ СОДЕРЖИМОГО
+time_task* print(time_task* beg, int active, int edit_el); // ВЫВОД ДАННЫХ
+void print_info(const time_task& t, int active); // ПЕЧАТЬ СОДЕРЖИМОГО
 void print_menu(int sym, const string items[]); // ШАБЛОН ПЕЧАТИ МЕНЮ
 time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ
 time_task* input(const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА
@@ -61,6 +63,7 @@ int write_file(char* filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поик элемента по фамилии 
+void edit(time_task* beg); // редактирование элемента
 
 
 
@@ -96,7 +99,7 @@ int main() {
 				// Печать элементов
 			case 2:
 				system("cls");
-				beg = print(beg, 1);
+				beg = print(beg, 1, 0);
 				break;
 
 				// Запись в файл
@@ -184,17 +187,23 @@ float percent_time_cpu(float a, float b) {
 }
 
 // ПЕЧАТЬ СОДЕРЖИМОГО
-void print_info(const time_task& t) {
-	cout << "|" << setw((__int64)1 + t.d.cipher.length()) << t.d.cipher;
+void print_info(const time_task& t, int active) {
+	if (active == 1) {
+		SetColor(7, 5);
+		cout << "|" << setw((__int64)1 + t.d.cipher.length()) << t.d.cipher;
+		SetColor(7, 0);
+	} else {
+		cout << "|" << setw((__int64)1 + t.d.cipher.length()) << t.d.cipher;
+	}
 	cout << setw(((__int64)18 - t.d.cipher.length()) + t.d.department_code.length()) << t.d.department_code;
 	cout << setw(((__int64)16 - t.d.department_code.length()) + t.d.fio.length()) << t.d.fio;
 	cout << setw(((__int64)18 - t.d.fio.length()) + t.d.all_time.length()) << t.d.all_time;
 	cout << setw(((__int64)17 - t.d.all_time.length()) + t.d.time_cpu.length()) << t.d.time_cpu << setw(9 - t.d.time_cpu.length()) << "|";
-	cout << " " << percent_time_cpu(stof(t.d.all_time), stof(t.d.time_cpu)) << setprecision(4) << fixed << setw(23) << "|";
+	cout << " " << setfill(' ') << setw(8) << percent_time_cpu(stof(t.d.all_time), stof(t.d.time_cpu)) << setfill(' ') << setw(23) << setprecision(4) << fixed << "|";
 }
 
 // ==========ВЫВОД ДАННЫХ==========
-time_task* print(time_task * beg, int active) {
+time_task* print(time_task * beg, int active, int edit_el) {
 
 	if (!beg) {
 		cout << "Список пуст" << endl;
@@ -217,8 +226,10 @@ time_task* print(time_task * beg, int active) {
 		if (i == active) {
 			SetColor(7, 5);
 			num_del = stoi(temp->d.cipher);
+			print_info(*temp, edit_el);
+		} else {
+			print_info(*temp, 0);
 		}
-		print_info(*temp);
 		SetColor(7, 0);
 
 		sum_all_time += stoi(temp->d.all_time); // Сумма общего времени
@@ -232,19 +243,21 @@ time_task* print(time_task * beg, int active) {
 	cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
 	cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
 	
+	if (edit_el == 1) edit(beg);
+
 	// считывание клавиш
 	do {
 		switch (_getwch()) {
 		case up: 
-			if (active > 1) {
+			if (active > 1 && edit_el != 1) {
 				system("cls");
-				print(beg, --active);
+				print(beg, --active, 0);
 			}
 			break;
 		case down: 
-			if (active < i - 1) {
+			if (active < i - 1 && edit_el != 1) {
 				system("cls");
-				print(beg, ++active);
+				print(beg, ++active, 0);
 			}
 			break;
 		case esc:
@@ -256,7 +269,27 @@ time_task* print(time_task * beg, int active) {
 			return beg;
 			break;
 		case enter:
-			
+			system("cls");
+			print(beg, active, 1);
+			break;
+		}
+	} while (1);
+}
+
+// ==========РЕДАКТИРОВАНИЕ ЭЛЕМЕНТА==========
+void edit(time_task* beg) {
+	do {
+		switch (_getwch()) {
+		case right_btn:
+
+			break;
+		case left_btn:
+	
+			break;
+		case esc:
+			break;
+		case enter:
+
 			break;
 		}
 	} while (1);
@@ -326,7 +359,7 @@ void find(time_task* beg) {
 			cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
 			cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
 			cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
-			print_info(*temp);
+			print_info(*temp, 0);
 			cout << "\n+------------------------------------------------------------------------------+-------------------------------+" << endl;
 			cout << endl;
 			system("pause");
@@ -414,7 +447,7 @@ void print_menu(int sym, const string items[]) {
 
 	// меняем положение меню
 	hCon = GetStdHandle(STD_OUTPUT_HANDLE);
-	cPos.Y = 10;
+	cPos.Y = 15;
 	cPos.X = 0;
 	SetConsoleCursorPosition(hCon, cPos);
 
@@ -427,13 +460,13 @@ void print_menu(int sym, const string items[]) {
 	cfi.FontFamily = FF_DONTCARE;
 	cfi.FontWeight = FW_NORMAL;
 	SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
-
 	//========================
 	//========================
 	//========================
 	for (int i = 1; i <= N_ITEMS; i++) {
 		
 		SetColor(7, 0);
+		cout << "                                             ";
 		if (i == sym) {
 			SetColor(7, 5);
 		}
