@@ -64,7 +64,7 @@ int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поик элемента по фамилии 
 void edit(time_task* beg, int active, time_task* _edit_ob); // редактирование элементаs
-
+void cls(); // очистка экрана без мерцания 
 
 
 //===================
@@ -79,10 +79,12 @@ int main() {
 		* end = 0;
 
 	read_file(filename, &beg, &end);
+	
 
 	while (1) {
 		int current = 1;
 		while (1) {
+			system("cls");
 			switch (menu(current, items)) {
 				// Добавление элемента в список
 			case 1:
@@ -164,7 +166,6 @@ time_task input_info(time_task* beg) {
 	cin >> t.d.fio;
 	do {
 		cout << "Введите общее время прохождения задания (5 символов)" << endl;
-		cin.ignore();
 		cin >> t.d.all_time;
 		cout << "Введите время центрального процессора (5 символов)" << endl;
 		cin.ignore();
@@ -172,8 +173,7 @@ time_task input_info(time_task* beg) {
 
 		if (stoi(t.d.all_time) < stoi(t.d.time_cpu)) {
 			cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
-		}
-		else break;
+		} else break;
 
 	} while (true);
 	system("pause");
@@ -186,67 +186,91 @@ float percent_time_cpu(float a, float b) {
 	return (b * 100) / a;
 }
 
-// ПЕЧАТЬ СОДЕРЖИМОГО
+// ==========АНАЛОГ setw()==========
+string sets(size_t size) {
+	string res_s;
+	for (int i = 0; i < size; i++) {
+		res_s += " ";
+	}
+	return res_s;
+}
+
+
+// ==========ОЧИСТКА ЭКРАНА БЕЗ МЕРЦАНИЯ==========
+void cls() {
+	HANDLE hd = GetStdHandle(STD_OUTPUT_HANDLE);
+	COORD cd;
+	cd.X = 0;
+	cd.Y = 0;
+	SetConsoleCursorPosition(hd, cd);
+}
+
+// ==========ПЕЧАТЬ СОДЕРЖИМОГО==========
 void print_info(const time_task& t, int active) {
 	if (active) SetColor(7, 0);
 
 	if (active == 1) {
 		SetColor(7, 0);
 		SetColor(7, 5);
-		cout << "|" << setw((__int64)1 + t.d.cipher.length()) << t.d.cipher;
+		cout << "| "   << t.d.cipher << sets(12 - t.d.cipher.length());
 		SetColor(7, 0);
+		cout << setw(6 + t.d.department_code.length());
 	} else {
-		cout << "|" << setw((__int64)1 + t.d.cipher.length()) << t.d.cipher;
+		cout << "| " << t.d.cipher << sets((13 - t.d.cipher.length()) + t.d.department_code.length()) << sets(5 - t.d.department_code.length());
 	}
 
 	if (active == 2) {
 		SetColor(7, 0);
 		SetColor(7, 5);
-		cout << setw(((__int64)18 - t.d.cipher.length()) + t.d.department_code.length()) << t.d.department_code;
+		cout << t.d.department_code << sets(10 - t.d.department_code.length());
 		SetColor(7, 0);
+		cout << setw(6 + t.d.fio.length());
 	}
 	else {
-		cout << setw(((__int64)18 - t.d.cipher.length()) + t.d.department_code.length()) << t.d.department_code;
+		cout << t.d.department_code << sets(16 - t.d.department_code.length());
 	}
 	
 	if (active == 3) {
 		SetColor(7, 0);
 		SetColor(7, 5);
-		cout << setw(((__int64)16 - t.d.department_code.length()) + t.d.fio.length()) << t.d.fio;
+		cout << t.d.fio << sets(15 - t.d.fio.length());
 		SetColor(7, 0);
+		cout << setw(3 + t.d.all_time.length());
 	}
 	else {
-		cout << setw(((__int64)16 - t.d.department_code.length()) + t.d.fio.length()) << t.d.fio;
+		cout << t.d.fio << sets(18 - t.d.fio.length());
 	}
-	
+
 	if (active == 4) {
 		SetColor(7, 0);
 		SetColor(7, 5);
-		cout << setw(((__int64)18 - t.d.fio.length()) + t.d.all_time.length()) << t.d.all_time;
+		cout << t.d.all_time << sets(11 - t.d.all_time.length());
 		SetColor(7, 0);
+		cout << setw(6 + t.d.time_cpu.length());
 	}
 	else {
-		cout << setw(((__int64)18 - t.d.fio.length()) + t.d.all_time.length()) << t.d.all_time;
+		cout << t.d.all_time << sets(17 - t.d.time_cpu.length());
 	}
 	
 	if (active == 5) {
 		SetColor(7, 0);
 		SetColor(7, 5);
-		cout << setw(((__int64)17 - t.d.all_time.length()) + t.d.time_cpu.length()) << t.d.time_cpu << setw(9 - t.d.time_cpu.length()) << "|";
+		cout << t.d.time_cpu << sets(9 - t.d.time_cpu.length()) << "|";
 		SetColor(7, 0);
 	}
 	else {
-		cout << setw(((__int64)17 - t.d.all_time.length()) + t.d.time_cpu.length()) << t.d.time_cpu << setw(9 - t.d.time_cpu.length()) << "|";
+		cout << t.d.time_cpu << setw(10 - t.d.time_cpu.length()) << "|";
 	}
-	cout << " " << setfill(' ') << setw(8) << percent_time_cpu(stof(t.d.all_time), stof(t.d.time_cpu)) << setfill(' ') << setw(23) << setprecision(4) << fixed << "|";
+
+	cout << setfill(' ') << setw(8) << percent_time_cpu(stof(t.d.all_time), stof(t.d.time_cpu)) << setfill(' ') << setw(24) << setprecision(4) << fixed << "|";
 }
 
 // ==========ВЫВОД ДАННЫХ==========
 time_task* print(time_task * beg, int active, int edit_el) {
-	char buf;
+	wint_t buf;
 
 	do {
-		system("CLS");
+		cls();
 
 		// если пустой список
 		if (!beg) {
@@ -264,9 +288,9 @@ time_task* print(time_task * beg, int active, int edit_el) {
 		time_task* temp = beg;
 		time_task* edit_ob = beg;
 
-		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
-		cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
-		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+		cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
+		cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
+		cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
 
 		for (; temp; temp = temp->next, i++) {
 
@@ -274,7 +298,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			if (i == active) {
 				SetColor(7, 5);
 				num_del = stoi(temp->d.cipher);
-				edit_ob = temp;
+				edit_ob = temp; // редактируемый объект
 				print_info(*temp, edit_el);
 			} else {
 				print_info(*temp, 0);
@@ -285,15 +309,16 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			sum_time_cpu += stoi(temp->d.time_cpu); // Сумма времени ЦП
 
 			cout << endl;
+			cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
 		}
 
-		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+		
 		cout << "Сумма общего времени: " << sum_all_time << endl;
 		cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
-		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
+		cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
 		// +++++++++++++++++
 
-		if (edit_el) return beg;
+		if (edit_el) return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
 
 		// считывание клавиш
 		buf = _getwch();
@@ -313,6 +338,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			return beg;
 		case enter:
 			edit(beg, active, edit_ob);
+			system("cls");
 			break;
 		}
 	} while (1);
@@ -352,9 +378,11 @@ void edit(time_task* beg, int active, time_task* _edit_ob) {
 					cin >> _edit_ob->d.all_time;
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
-						cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
-					}
-					else break;
+						cls();
+						print(beg, active, edit_el);
+						cout << "Общее время должно быть больше времени центрального процессора!\n";
+						cout << "Введите заново: " << endl;
+					} else break;
 				} while (1);
 				break;
 			case 5:
@@ -362,7 +390,9 @@ void edit(time_task* beg, int active, time_task* _edit_ob) {
 					cin >> _edit_ob->d.time_cpu;
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
-						cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
+						cls();
+						print(beg, active, edit_el);
+						cout << "Общее время должно быть больше времени центрального процессора!\n";
 						cout << "Введите заново: " << endl;
 					}
 					else break;
@@ -370,9 +400,6 @@ void edit(time_task* beg, int active, time_task* _edit_ob) {
 				break;
 			}
 			print(beg, active, edit_el);
-			return;
-			cout << "ERROR!" << endl;
-			system("pause");
 			return;
 		}
 	} while (1);
@@ -561,10 +588,10 @@ void print_menu(int sym, const string items[]) {
 
 // ==========МЕНЮ==========
 int menu(int& active, const string items[]) {
-	char buf;
+	wint_t buf;
 
 	do {
-		system("CLS");
+		cls();
 		print_menu(active, items);
 
 		buf = _getwch();
