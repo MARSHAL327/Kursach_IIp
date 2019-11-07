@@ -63,7 +63,7 @@ int write_file(char* filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поик элемента по фамилии 
-void edit(time_task* beg, int active); // редактирование элементаs
+void edit(time_task* beg, int active, time_task* _edit_ob); // редактирование элементаs
 
 
 
@@ -262,6 +262,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			num_del = 0; // номер для удаления 
 
 		time_task* temp = beg;
+		time_task* edit_ob = beg;
 
 		cout << "+------------------------------------------------------------------------------+-------------------------------+" << endl;
 		cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
@@ -273,6 +274,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			if (i == active) {
 				SetColor(7, 5);
 				num_del = stoi(temp->d.cipher);
+				edit_ob = temp;
 				print_info(*temp, edit_el);
 			} else {
 				print_info(*temp, 0);
@@ -310,16 +312,15 @@ time_task* print(time_task * beg, int active, int edit_el) {
 		case esc:
 			return beg;
 		case enter:
-			edit(beg, active);
+			edit(beg, active, edit_ob);
 			break;
 		}
 	} while (1);
 }
 
 // ==========РЕДАКТИРОВАНИЕ ЭЛЕМЕНТА==========
-void edit(time_task* beg, int active) {
+void edit(time_task* beg, int active, time_task* _edit_ob) {
 	int edit_el = 1;
-	time_task *t = beg;
 
 	do {
 		print(beg, active, edit_el);
@@ -335,44 +336,41 @@ void edit(time_task* beg, int active) {
 			return;
 			break;
 		case enter:
-			for (int i = 1; t; t = t->next, i++) {
-				cout << "i = " << i << endl;
-				if (i == active) {
-					switch (edit_el) {
-					case 1:
-						cin >> t->d.cipher;
-						break;
-					case 2:
-						cin >> t->d.department_code;
-						break;
-					case 3:
-						cin >> t->d.fio;
-						break;
-					case 4:
-						do {
-							cin >> t->d.all_time;
+			cout << "Введите новые данные:" << endl;
+			switch (edit_el) {
+			case 1:
+				cin >> _edit_ob->d.cipher;
+				break;
+			case 2:
+				cin >> _edit_ob->d.department_code;
+				break;
+			case 3:
+				cin >> _edit_ob->d.fio;
+				break;
+			case 4:
+				do {
+					cin >> _edit_ob->d.all_time;
 
-							if (stoi(t->d.all_time) < stoi(t->d.time_cpu)) {
-								cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
-							} else break;
-						} while (1);
-						break;
-					case 5:
-						do {
-							cin >> t->d.time_cpu;
-
-							if (stoi(t->d.all_time) < stoi(t->d.time_cpu)) {
-								cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
-								cout << "Введите заново: " << endl;
-							}
-							else break;
-						} while (1);
-						break;
+					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
+						cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
 					}
-					print(beg, active, edit_el);
-					return;
-				}
+					else break;
+				} while (1);
+				break;
+			case 5:
+				do {
+					cin >> _edit_ob->d.time_cpu;
+
+					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
+						cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
+						cout << "Введите заново: " << endl;
+					}
+					else break;
+				} while (1);
+				break;
 			}
+			print(beg, active, edit_el);
+			return;
 			cout << "ERROR!" << endl;
 			system("pause");
 			return;
