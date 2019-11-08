@@ -6,12 +6,13 @@
 #include <conio.h>
 #include <stdio.h>
 #include <cwchar>
+#include <winuser.h>
 using namespace std;
 
 //===================
 // КОНСТАНТЫ
 //===================
-char filename[] = "person.txt";
+string filename = "person.txt";
 
 // коды клавиш
 const int up = 72,
@@ -58,8 +59,8 @@ time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПА
 time_task* input(const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА
 time_task input_info(time_task* beg); // ВВОД ДАННЫХ
 time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
-int read_file(char* filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
-int write_file(char* filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
+int read_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
+int write_file(string filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поик элемента по фамилии 
@@ -72,7 +73,7 @@ void cls(); // очистка экрана без мерцания
 //===================
 int main() {
 	SetColor(0, 0); // устанавливаем цвет текста и заднего фона чёрным
-	::SendMessage(::GetConsoleWindow(), WM_SYSKEYDOWN, VK_RETURN, 0x20000000);
+	ShowWindow(GetConsoleWindow(), SW_MAXIMIZE); // полноэкранный режим
 
 	int item = 0;
 	time_task* beg = 0,
@@ -80,7 +81,6 @@ int main() {
 
 	read_file(filename, &beg, &end);
 	
-
 	while (1) {
 		int current = 1;
 		while (1) {
@@ -106,8 +106,8 @@ int main() {
 
 				// Запись в файл
 			case 3:
-				system("cls");
 				write_file(filename, beg);
+				MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
 				break;
 
 				// Поиск элемента
@@ -117,7 +117,11 @@ int main() {
 				break;
 
 				// выход из программы
-			case 5: return 0;
+			case 5: 
+				if (MessageBox(0, L"Хотите сохранить БД?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
+					write_file(filename, beg);
+				}
+				return 0;
 			default:
 				cout << "Неверно введён номер!" << endl;
 				system("pause");
@@ -330,8 +334,10 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			if (active < i - 1) active++;
 			break;
 		case del:
-			beg = delete_el(beg, num_del);
-			active--;
+			if (MessageBox(0, L"Вы уверены, что хотите удалить?", L"Удаление", MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == 6) {
+				beg = delete_el(beg, num_del);
+				active--;
+			}
 			system("cls");
 			break;
 		case esc:
@@ -483,7 +489,7 @@ void find(time_task* beg) {
 }
 
 // ==========ЧТЕНИЕ ИЗ ФАЙЛА==========
-int read_file(char* filename, time_task **beg, time_task **end) {
+int read_file(string filename, time_task **beg, time_task **end) {
 	int k = 0;
 	ifstream fin;
 	fin.open(filename);
@@ -511,7 +517,7 @@ int read_file(char* filename, time_task **beg, time_task **end) {
 }
 
 // ==========ЗАПИСЬ В ФАЙЛ==========
-int write_file(char* filename, time_task * temp) {
+int write_file(string filename, time_task * temp) {
 	ofstream fout;
 	fout.open(filename);
 
@@ -529,9 +535,6 @@ int write_file(char* filename, time_task * temp) {
 		temp = temp->next;
 	}
 
-	cout << "Данные сохранены в файле: " << filename << endl;
-	cout << "==============================" << endl;
-	system("pause");
 	return 0;
 }
 
