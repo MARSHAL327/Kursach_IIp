@@ -13,6 +13,7 @@ using namespace std;
 // КОНСТАНТЫ
 //===================
 string filename = "person.txt";
+int total_el = 0;
 
 // коды клавиш
 const int up = 72,
@@ -118,13 +119,12 @@ int main() {
 
 				// выход из программы
 			case 5: 
-				if (MessageBox(0, L"Хотите сохранить БД?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
+				/*if (MessageBox(0, L"Хотите сохранить БД?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
 					write_file(filename, beg);
-				}
+				}*/
 				return 0;
 			default:
-				cout << "Неверно введён номер!" << endl;
-				system("pause");
+				MessageBox(0, L"Неверно введён номер!", L"Ошибка", MB_ICONHAND | MB_SETFOREGROUND);
 				break;
 			}
 		}
@@ -272,6 +272,10 @@ void print_info(const time_task& t, int active) {
 // ==========ВЫВОД ДАННЫХ==========
 time_task* print(time_task * beg, int active, int edit_el) {
 	wint_t buf;
+	time_task* buf_el = beg;
+	time_task* temp = beg;
+	bool new_page = 0; // если это новая страница
+	int num_pages = 6;
 
 	do {
 		cls();
@@ -288,8 +292,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			sum_time_cpu = 0,
 			i = 1, // количество записей
 			num_del = 0; // номер для удаления 
-
-		time_task* temp = beg;
+		
 		time_task* edit_ob = beg;
 
 		cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
@@ -298,13 +301,28 @@ time_task* print(time_task * beg, int active, int edit_el) {
 
 		for (; temp; temp = temp->next, i++) {
 
+			// если новая страница
+			if (active % num_pages == 0 && i % num_pages == 0) {
+				buf_el = temp;
+				system("cls");
+				cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
+				cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
+				cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
+				new_page = 1;
+			} 
+
+			if (i % num_pages == 0) {
+				break;
+			}
+
 			// разукрашивание выбранного элемента
 			if (i == active) {
 				SetColor(7, 5);
 				num_del = stoi(temp->d.cipher);
 				edit_ob = temp; // редактируемый объект
 				print_info(*temp, edit_el);
-			} else {
+			}
+			else {
 				print_info(*temp, 0);
 			}
 			SetColor(7, 0);
@@ -315,7 +333,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			cout << endl;
 			cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
 		}
-
+		
 		
 		cout << "Сумма общего времени: " << sum_all_time << endl;
 		cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
@@ -323,20 +341,33 @@ time_task* print(time_task * beg, int active, int edit_el) {
 		// +++++++++++++++++
 
 		if (edit_el) return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
-
 		// считывание клавиш
 		buf = _getwch();
 		switch (buf) {
 		case up:
-			if (active > 1) active--;
+			if (active > 1) {
+				active--;
+				if (active % num_pages == 0) {
+					temp = buf_el;
+				}
+				else temp = beg;
+			}
 			break;
 		case down:
-			if (active < i - 1) active++;
+			if (active < i - 1) {
+				active++;
+				if (active % num_pages == 0) {
+					temp = buf_el;
+				}
+				else temp = beg;
+			}
 			break;
 		case del:
 			if (MessageBox(0, L"Вы уверены, что хотите удалить?", L"Удаление", MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == 6) {
 				beg = delete_el(beg, num_del);
-				active--;
+				if (i == 1) { // если выбран был первый элемент
+					active++;
+				} else active--;
 			}
 			system("cls");
 			break;
@@ -511,7 +542,9 @@ int read_file(string filename, time_task **beg, time_task **end) {
 		else {
 			*beg = input(t); *end = *beg;
 		}
+		total_el++;
 	}
+	
 
 	return 0;
 }
