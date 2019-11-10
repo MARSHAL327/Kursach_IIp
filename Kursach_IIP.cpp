@@ -281,15 +281,18 @@ void print_info(const time_task& t, int active) {
 // ==========ВЫВОД ДАННЫХ==========
 time_task* print(time_task * beg, int active, int edit_el) {
 	wint_t buf;
-	time_task* temp = beg;
-	time_task* buf_el = beg;
-	int num_pages    = 3, // кол-во элементов на одной странице
-		i            = 1, // номер текущего элемента
-		test         = 0, // счётчик для num_pages
-		page         = 0, // текущая страница
-		np           = 0, // новая страница	
-		sum_all_time = 0, // Сумма общего времени
-		sum_time_cpu = 0; // Сумма времени ЦП
+	time_task* temp = beg, 
+		*buf_el = beg, 
+		*first_buf_el = beg,
+		*edit_ob = beg;
+	int num_pages		= 3, // кол-во элементов на одной странице
+		i				= 1, // номер текущего элемента
+		first_i			= 0, // первый элемент в каждой странице
+		count_num_pages = 1, // счётчик для num_pages
+		page            = 0, // текущая страница
+		np              = 0, // новая страница	
+		sum_all_time    = 0, // Сумма общего времени
+		sum_time_cpu	= 0; // Сумма времени ЦП
 
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	int ret = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
@@ -301,8 +304,8 @@ time_task* print(time_task * beg, int active, int edit_el) {
 	}
 
 	do {
-		//system("cls");
 		cls();
+		//system("cls");
 
 		// если пустой список
 		if (!beg) {
@@ -314,30 +317,25 @@ time_task* print(time_task * beg, int active, int edit_el) {
 		// +++++ОСНОВНОЙ ВЫВОД+++++
 		int num_del = 0; // номер для удаления 
 
-		time_task* edit_ob = beg;
-
-		if (active % (num_pages + 1) == 0) system("cls");
-
 		if (active > num_pages) {
 			temp = buf_el;
 		} else {
 			temp = beg;
-			i = 1;
 		}
 
 		cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
 		cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
 		cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
-		for (; temp; temp = temp->next, i++) {
-			if (i % num_pages != 0) {
-				np = 0;
+
+		for (i = count_num_pages; temp; temp = temp->next, i++) {
+			// достаём первые элементы
+			if (i % num_pages == 1) {
+				first_i = i;
+				first_buf_el = temp;
 			}
 
-			if (np == 1) {
-				system("cls");
-				cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
-				cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
-				cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
+			if (i % num_pages != 0) {
+				np = 0;
 			}
 
 			cout << "i = " << i;
@@ -357,7 +355,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 
 			cout << endl;
 			cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl;
-			
+
 			if (i % num_pages == 0 && np == 0) {
 				np = 1;
 				break;
@@ -371,32 +369,28 @@ time_task* print(time_task * beg, int active, int edit_el) {
 		// +++++++++++++++++
 
 		if (edit_el) return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
-
 		// считывание клавиш
 		buf = _getwch();
 		switch (buf) {
 		case up:
-			if (active % (num_pages) == 0) {
+			if (active % (num_pages + 1) == 0 || page == ceil(total_el / num_pages)) {
 				page--;
+				//buf_el = first_buf_el;
+				count_num_pages = first_i - num_pages;
 			}
 			if (active > 1) active--;
-			if (page == 0) {
+			/*if (page == 0) {
 				if (active % (num_pages + 1) == 0) {
 					page--;
 				}
-			}
+			}*/
 			break;
 		case down:
 			if (active % (num_pages) == 0) {
-				cout << "i = " << i;
-				i = 0;
-				page++; 
+				page++;
 				buf_el = temp->next;
-				if (page == 1) i += num_pages + 1;
-				else i += test + num_pages;
-				test = i;
-			} else {
-				i = test;
+				count_num_pages = i + 1;
+				system("cls");
 			}
 			if (active < total_el) active++;
 			if (page == 0) {
