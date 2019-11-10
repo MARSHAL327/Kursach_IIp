@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DEFECTS>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\sanya\desktop\kurasach_iip-master</FILEPATH>
+      <FILENAME>kursach_iip.cpp</FILENAME>
+      <LINE>55</LINE>
+      <COLUMN>0</COLUMN>
+    </SFA>
+    <DEFECTCODE>26495</DEFECTCODE>
+    <DESCRIPTION>Variable 'time_task::next' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
+    <FUNCTION>time_task::{ctor}</FUNCTION>
+    <DECORATED>??0time_task@@QEAA@XZ</DECORATED>
+    <FUNCLINE>55</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\sanya\desktop\kurasach_iip-master</FILEPATH>
+      <FILENAME>kursach_iip.cpp</FILENAME>
+      <LINE>55</LINE>
+      <COLUMN>0</COLUMN>
+    </SFA>
+    <DEFECTCODE>26495</DEFECTCODE>
+    <DESCRIPTION>Variable 'time_task::prev' is uninitialized. Always initialize a member variable (type.6).</DESCRIPTION>
+    <FUNCTION>time_task::{ctor}</FUNCTION>
+    <DECORATED>??0time_task@@QEAA@XZ</DECORATED>
+    <FUNCLINE>55</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+</DEFECTS>

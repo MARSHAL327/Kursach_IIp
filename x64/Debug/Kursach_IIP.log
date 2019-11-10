@@ -1,2 +1,3 @@
 ﻿  Kursach_IIP.cpp
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(370): warning C4244: аргумент: преобразование "double" в "std::streamsize", возможна потеря данных
   Kursach_IIP.vcxproj -> C:\Users\sanya\Desktop\Kurasach_IIP-master\x64\Debug\Kursach_IIP.exe
