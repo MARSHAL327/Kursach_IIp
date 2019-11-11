@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <cwchar>
 #include <winuser.h>
+#include <tchar.h>
 using namespace std;
 
 //===================
@@ -78,7 +79,7 @@ void cls(); // очистка экрана без мерцания
 // ОСНОВНАЯ ПРОГРАММА
 //===================
 int main() {
-	SetColor(0, 0); // устанавливаем цвет текста и заднего фона чёрным
+	SetColor(7, 0); // устанавливаем цвет текста и заднего фона чёрным
 	ShowWindow(GetConsoleWindow(), SW_MAXIMIZE); // полноэкранный режим
 
 	int item = 0;
@@ -285,14 +286,17 @@ time_task* print(time_task * beg, int active, int edit_el) {
 		*buf_el = beg, 
 		*first_buf_el = beg,
 		*edit_ob = beg;
-	int num_pages		= 3, // кол-во элементов на одной странице
+
+	int num_pages		= 4, // кол-во элементов на одной странице
 		i				= 1, // номер текущего элемента
 		first_i			= 0, // первый элемент в каждой странице
 		count_num_pages = 1, // счётчик для num_pages
-		page            = 0, // текущая страница
-		np              = 0, // новая страница	
-		sum_all_time    = 0, // Сумма общего времени
+		page			= 0, // текущая страница
+		np				= 0, // новая страница	
+		sum_all_time	= 0, // Сумма общего времени
 		sum_time_cpu	= 0; // Сумма времени ЦП
+
+	float total_pages = ceil(total_el / num_pages); // общее кол-во страниц
 
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	int ret = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
@@ -305,7 +309,6 @@ time_task* print(time_task * beg, int active, int edit_el) {
 
 	do {
 		cls();
-		//system("cls");
 
 		// если пустой список
 		if (!beg) {
@@ -329,17 +332,22 @@ time_task* print(time_task * beg, int active, int edit_el) {
 
 		for (i = count_num_pages; temp; temp = temp->next, i++) {
 			// достаём первые элементы
-			if (i % num_pages == 1) {
+			if (i % num_pages == 1 && page != 0) {
 				first_i = i;
-				first_buf_el = temp;
+				buf_el = temp;
+				for (int j = 0; j < num_pages; j++, temp = temp->prev) {
+					first_buf_el = temp->prev;
+					//cout << "temp->prev = " << first_buf_el->d.fio << endl;
+				}
+				temp = buf_el;
 			}
 
 			if (i % num_pages != 0) {
 				np = 0;
 			}
 
-			cout << "i = " << i;
-			cout << "active = " << active;
+			/*cout << "i = " << i;
+			cout << "active = " << active;*/
 			
 			// разукрашивание выбранного элемента
 			if (i == active) {
@@ -365,20 +373,22 @@ time_task* print(time_task * beg, int active, int edit_el) {
 		cout << "Сумма общего времени: " << sum_all_time << endl;
 		cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
 		cout << "+-------------------------------------------------------------------------------+-------------------------------+" << endl << endl;
-		cout << setw(csbi.dwSize.X / 3.5) << "Страница " << page + 1 << " из " << setprecision(0) << ceil(total_el / num_pages);
+		cout << setw(csbi.dwSize.X / 2.5) << "Страница " << page + 1 << " из " << setprecision(0) << total_pages;
 		// +++++++++++++++++
 
 		if (edit_el) return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
+
 		// считывание клавиш
 		buf = _getwch();
 		switch (buf) {
 		case up:
-			if (active % (num_pages + 1) == 0 || page == ceil(total_el / num_pages)) {
-				page--;
-				//buf_el = first_buf_el;
-				count_num_pages = first_i - num_pages;
-			}
 			if (active > 1) active--;
+			if (active % num_pages == 0 || page == total_pages) {
+				page--;
+				buf_el = first_buf_el;
+				count_num_pages = first_i - num_pages; // формируем i
+				system("cls");
+			}
 			/*if (page == 0) {
 				if (active % (num_pages + 1) == 0) {
 					page--;
@@ -389,7 +399,7 @@ time_task* print(time_task * beg, int active, int edit_el) {
 			if (active % (num_pages) == 0) {
 				page++;
 				buf_el = temp->next;
-				count_num_pages = i + 1;
+				count_num_pages = i + 1; // формируем i
 				system("cls");
 			}
 			if (active < total_el) active++;
