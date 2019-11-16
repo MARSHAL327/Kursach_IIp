@@ -31,13 +31,21 @@ enter = 13,
 esc = 27,
 del = 83;
 
-//названия пунктов
+// названия пунктов
 const string items[5] = {
 	"   Ввод данных            ",
 	"   Печать данных          ",
 	"   Запись данных в файл   ",
-	"   Поиск по фамилии       ",
+	"   Поиск                  ",
 	"   Выход                  " };
+
+// названия для сортировки 
+const string sort_items[5] = {
+	"| Шифр задания ",
+	"Код отдела ",
+	"ФИО ",
+	"Общее время ",
+	"Время ЦП |" };
 
 
 //===================
@@ -65,7 +73,7 @@ struct time_task {
 //===================
 // ИНТЕРФЕЙС
 //===================
-time_task* print(time_task* real_beg ,time_task* beg, int active, int edit_el, int print_count_num_pages, int print_page); // ВЫВОД ДАННЫХ
+time_task* print(time_task* end, time_task* real_beg ,time_task* beg, int active, int edit_el, int print_count_num_pages, int print_page); // ВЫВОД ДАННЫХ
 void print_info(const time_task& t, int active); // ПЕЧАТЬ СОДЕРЖИМОГО
 void print_menu(int sym, const string items[]); // ШАБЛОН ПЕЧАТИ МЕНЮ
 time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ
@@ -77,8 +85,10 @@ int write_file(string filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поик элемента по фамилии 
-void edit(time_task* real_beg, time_task* beg, int active, time_task* _edit_ob, int edit_count_num_pages, int edit_page); // редактирование элемента
+void edit(time_task* end, time_task* real_beg, time_task* beg, int active, time_task* _edit_ob, int edit_count_num_pages, int edit_page); // редактирование элемента
 void cls(); // очистка экрана без мерцания 
+void sort(time_task* beg, int field_for_sort, int sort_direction); // сортировка
+int compare(time_task* t_i, time_task* t_j, int num, int compare_direction); // сравнение данных для сортировки
 
 
 //===================
@@ -120,7 +130,7 @@ int main() {
 				// Печать элементов
 			case 2:
 				system("cls");
-				beg = print(beg, beg, 1, 0, 1, 0);
+				beg = print(end, beg, beg, 1, 0, 1, 0);
 				break;
 
 				// Запись в файл
@@ -187,6 +197,12 @@ time_task input_info(time_task * beg) {
 	cin >> t.d.department_code;
 	cout << "Введите ФИО (15 символов)" << endl;
 	cin >> t.d.fio;
+	for (int i = 0; i < t.d.fio.length(); i++) {
+		if (t.d.fio[i] >= '0' && t.d.fio[i] <= '9') {
+			cout << "Ошибка!" << endl;
+			system("pause");
+		}
+	}
 	do {
 		cout << "Введите общее время прохождения задания (5 символов)" << endl;
 		cin >> t.d.all_time;
@@ -292,7 +308,9 @@ void print_info(const time_task & t, int active) {
 }
 
 // ==========ВЫВОД ДАННЫХ==========
-time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, int print_count_num_pages, int print_page) {
+// если active = 0, то это режим сортировки
+// если active = -1, то это изменение кол-ва элементов на странице
+time_task* print(time_task* end, time_task* real_beg, time_task * beg, int active, int edit_el, int print_count_num_pages, int print_page) {
 	wint_t buf;
 
 	time_task* temp = beg,
@@ -300,16 +318,22 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 		* first_buf_el = beg,
 		* edit_ob = beg;
 
-	int num_pages = 6, // кол-во элементов на одной странице
-		i = 1, // номер текущего элемента
-		first_i = 0, // первый элемент в каждой странице
+	int num_pages		= 6, // кол-во элементов на одной странице
+		i				= 1, // номер текущего элемента
+		first_i			= 0, // первый элемент в каждой странице
 		count_num_pages = print_count_num_pages, // счётчик для i (название не соответствует применению)
-		page = print_page, // текущая страница
-		np = 0; // новая страница
+		page			= print_page, // текущая страница
+		np				= 0, // новая страница
+		sort_field		= 1, // поле для сортировки
+		remember_active = 0, // запоминающая переменная для active
+		direction		= 0, // направление сортировки (0 - от меньшего к большему, 1 - наоборот)
+		fl				= 0;
+
+	string mid_sort;
 
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	int ret = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-	
+
 	do {
 		float total_pages = ceil(total_el / num_pages); // общее кол-во страниц
 
@@ -324,7 +348,11 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 		// +++++ОСНОВНОЙ ВЫВОД+++++
 		int num_del = 0; // номер для удаления 
 
-		if (active > num_pages) {
+		if (total_el < num_pages) {
+			num_pages = total_el;
+		}
+
+		if (active > num_pages || active == 0) {
 			temp = buf_el;
 			edit_ob = buf_el;
 		}
@@ -333,8 +361,40 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 			edit_ob = beg;
 		}
 
+		cout << "\nОбщее количесвто элементов: " << total_el << setw(20) << endl;
+		cout << "Количество элементов на странице: ";
+
+		if (active == -1) {
+			SetColor(7, 5);
+		} else SetColor(7, 2);
+
+		cout << " " << num_pages << " " << endl << endl;
+		SetColor(7, 0);
 		cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
-		cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
+		
+		if (active == 0) {
+			for (int i = 1; i <= 5; i++) {
+				if (i == sort_field) {
+					SetColor(7, 5);
+				}
+				cout << sort_items[i - 1];
+				if (i == direction && fl == 1) {
+					cout << "<";
+					fl = 0;
+				} else 
+				if (i == direction) {
+					fl = 1;
+					cout << ">";
+				} else 
+				
+				cout << "    ";
+				SetColor(7, 0);
+			}
+		} else {
+			cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП |";
+		}
+
+		cout << " Процент процессорного времени |" << endl;
 		cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
 
 		for (i = count_num_pages; temp; temp = temp->next, i++) {
@@ -354,6 +414,9 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 
 			/*cout << "i = " << i;
 			cout << "active = " << active;*/
+			if (i == total_el / 2) {
+				mid_sort = temp->d.cipher;
+			}
 
 			// разукрашивание выбранного элемента
 			if (i == active) {
@@ -382,39 +445,51 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 		cout << setw(csbi.dwSize.X / 2.5) << "Страница " << page + 1 << " из " << setprecision(0) << total_pages;
 		// +++++++++++++++++
 
-		if (edit_el) return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
+		
+		if (edit_el) {
+			return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
+		} 
 
 		// считывание клавиш
 		buf = _getwch();
 		switch (buf) {
 		case up:
-			if (active > 1) active--;
-			if (active % num_pages == 0 || page == total_pages) {
-				page--;
-				buf_el = first_buf_el;
-				count_num_pages = first_i - num_pages; // формируем i
-				system("cls");
-			}
+				if (active == 0) break;
+				if (active > 1) active--;
+				if (active % num_pages == 0 || page == total_pages) {
+					page--;
+					buf_el = first_buf_el;
+					count_num_pages = first_i - num_pages; // формируем i
+					system("cls");
+				}
 			break;
 		case down:
-			if (active % (num_pages) == 0) {
-				if (i == total_el) { // если это самый последний элемент
-					break;
-				}
-				page++;
-				buf_el = temp->next;
-				count_num_pages = i + 1; // формируем i
-				system("cls");
-			}
-			if (active < total_el) active++;
-			if (page == 0) {
-				if (active % (num_pages + 1) == 0 && temp != 0) {
+			if (active != 0) {
+				if (active % (num_pages) == 0) {
+					if (i == total_el) { // если это самый последний элемент
+						break;
+					}
 					page++;
 					buf_el = temp->next;
+					count_num_pages = i + 1; // формируем i
+					system("cls");
+				}
+				if (active < total_el) active++;
+				if (page == 0) {
+					if (active % (num_pages + 1) == 0 && temp != 0) {
+						page++;
+						buf_el = temp->next;
+					}
 				}
 			}
 			break;
 		case right_btn:
+			if (active % num_pages == 0) {
+				if (sort_field < 5) {
+					sort_field++;
+				}
+				break;
+			}
 			if (active + num_pages <= total_el) {
 				buf_el = temp->next;
 				count_num_pages += num_pages;
@@ -424,6 +499,12 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 			}
 			break;
 		case left_btn:
+			if (active == 0) {
+				if (sort_field > 1) {
+					sort_field--;
+				}
+				break;
+			}
 			if (active - num_pages >= 1) {
 				buf_el = first_buf_el;
 				count_num_pages -= num_pages;
@@ -443,7 +524,7 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 					buf_el = first_buf_el;
 					count_num_pages -= num_pages;
 					page--;
-				}
+				} else if (active < num_pages) buf_el = beg;
 
 				// пересчитываем сумму общего времени и сумму времени ЦП
 				sum_all_time = sum_time_cpu = 0;
@@ -455,28 +536,47 @@ time_task* print(time_task* real_beg, time_task * beg, int active, int edit_el, 
 			system("cls");
 			break;
 		case esc:
-			return beg;
+			if (active == 0) {
+				active = remember_active;
+				break;
+			} else {
+				return beg;
+			}
 		case enter:
-			edit(real_beg, buf_el, active, edit_ob, count_num_pages, page);
+			if (active == 0) {
+				sort(beg, sort_field, direction);
+				if (direction == 0) direction = sort_field; else direction = 0;
+				break;
+			}
+			edit(end, beg, buf_el, active, edit_ob, count_num_pages, page);
 			system("cls");
+			break;
+		case 115:
+		case 1099:
+			if (active == 0) {
+				active = remember_active;
+			} else {
+				remember_active = active;
+				active = 0;
+			}
 			break;
 		}
 	} while (1);
 }
 
 // ==========РЕДАКТИРОВАНИЕ ЭЛЕМЕНТА==========
-void edit(time_task* real_beg ,time_task * beg, int active, time_task * _edit_ob, int edit_count_num_pages, int edit_page) {
+void edit(time_task* end, time_task* real_beg ,time_task * beg, int active, time_task * _edit_ob, int edit_count_num_pages, int edit_page) {
 	int edit_el = 1;
 
 	do {
-		print(real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
+		print(end, real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
 
 		switch (_getwch()) {
 		case right_btn:
-			if (edit_el >= 1 && edit_el < 5) print(real_beg, beg, active, ++edit_el, edit_count_num_pages, edit_page);
+			if (edit_el >= 1 && edit_el < 5) print(end, real_beg, beg, active, ++edit_el, edit_count_num_pages, edit_page);
 			break;
 		case left_btn:
-			if (edit_el <= 5 && edit_el > 1) print(real_beg, beg, active, --edit_el, edit_count_num_pages, edit_page);
+			if (edit_el <= 5 && edit_el > 1) print(end, real_beg, beg, active, --edit_el, edit_count_num_pages, edit_page);
 			break;
 		case esc:
 			return;
@@ -499,7 +599,7 @@ void edit(time_task* real_beg ,time_task * beg, int active, time_task * _edit_ob
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
 						system("cls");
-						print(real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
+						print(end, real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
 						MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Ошибка", MB_ICONWARNING | MB_SETFOREGROUND);
 						cout << "\nВведите заново: " << endl;
 					} else break;
@@ -511,7 +611,7 @@ void edit(time_task* real_beg ,time_task * beg, int active, time_task * _edit_ob
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
 						system("cls");
-						print(real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
+						print(end, real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
 						MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Ошибка", MB_ICONWARNING | MB_SETFOREGROUND);
 						cout << "\nВведите заново: " << endl;
 					} else break;
@@ -527,7 +627,7 @@ void edit(time_task* real_beg ,time_task * beg, int active, time_task * _edit_ob
 			}
 
 			system("cls");
-			print(real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
+			print(end, real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
 			return;
 		}
 	} while (1);
@@ -577,10 +677,55 @@ time_task* delete_el(time_task * beg, int num_del) {
 	return beg;
 }
 
+// ==========СРАВНЕНИЕ ДАННЫХ ДЛЯ СОРТИРОВКИ==========
+int compare(time_task* t_i, time_task* t_j, int num, int compare_direction) {
+	switch (num) {
+	case 1:
+		if (compare_direction == 0) {
+			return stoi(t_i->d.cipher) > stoi(t_j->d.cipher);
+		} else return stoi(t_i->d.cipher) < stoi(t_j->d.cipher);
+	case 2:
+		if (compare_direction == 0) {
+			return stoi(t_i->d.department_code) > stoi(t_j->d.department_code);
+		} else return stoi(t_i->d.department_code) < stoi(t_j->d.department_code);
+		
+	case 3:
+		if (compare_direction == 0) {
+			return t_i->d.fio > t_j->d.fio;
+		} else return t_i->d.fio < t_j->d.fio;
+		
+	case 4:
+		if (compare_direction == 0) {
+			return stoi(t_i->d.all_time) > stoi(t_j->d.all_time);
+		} else return stoi(t_i->d.all_time) < stoi(t_j->d.all_time);
+		
+	case 5:
+		if (compare_direction == 0) {
+			return stoi(t_i->d.time_cpu) > stoi(t_j->d.time_cpu);
+		} else return stoi(t_i->d.time_cpu) < stoi(t_j->d.time_cpu);
+	}
+	return 0;
+}
+
+// ==========СОРТИРОВКА==========
+void sort(time_task* beg, int field_for_sort, int sort_direction){
+	time_task *temp_i = beg,
+			  *temp_j = beg;
+
+	for (; temp_i; temp_i = temp_i->next) {
+		for (temp_j = temp_i; temp_j; temp_j = temp_j->next) {
+			if (compare(temp_i, temp_j, field_for_sort, sort_direction)) {
+				swap(temp_i->d, temp_j->d);
+			}
+		}
+	}
+}
+
 // ==========ПОИСК ЭЛЕМЕНТА ПО ФАМИЛИИ==========
 void find(time_task * beg) {
 	time_task* temp = beg;
 	string find_el;
+	bool fl = 0;
 
 	system("cls");
 
@@ -589,25 +734,26 @@ void find(time_task * beg) {
 		return;
 	}
 
-	cout << "Введите ФИО сотрудника для поиска" << endl;
+	cout << "Введите данные для поиска" << endl;
 	cin >> find_el;
+	system("cls");
+
+	cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
+	cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
+	cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
 
 	while (temp) {
-		if (find_el == temp->d.fio) {
-			cout << "+——————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
-			cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП| Процент процессорного времени |" << endl;
-			cout << "+——————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
+		if (find_el == temp->d.all_time || find_el == temp->d.cipher || find_el == temp->d.department_code || find_el == temp->d.fio || find_el == temp->d.time_cpu) {
+			fl = 1;
 			print_info(*temp, 0);
-			cout << "\n+———————————————————————————————————————————————————————————————————————————————+——————————————————————————————+" << endl;
-			cout << endl;
-			system("pause");
-			return;
+			cout << "\n+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
 		}
 		temp = temp->next;
 	}
 
-	cout << "Сотрудника с такой фамилией не найдено" << endl;
-	system("pause");
+	if (fl == 0) {
+		MessageBox(0, L"Сотрудник с такими данными не найден", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
+	} else system("pause");
 }
 
 // ==========ЧТЕНИЕ ИЗ ФАЙЛА==========
@@ -673,7 +819,7 @@ void print_menu(int sym, const string items[]) {
 	COORD cPos;
 	int width = 0, height = 0;
 
-	// вытакиваем ширину и высоту
+	// вытаскиваем ширину и высоту
 	hCon = GetStdHandle(-12);
 	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
 	if (GetConsoleScreenBufferInfo(hCon, &consoleInfo))
