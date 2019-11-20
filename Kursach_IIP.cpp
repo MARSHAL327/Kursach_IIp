@@ -17,6 +17,8 @@ string filename = "person.txt";
 int sum_all_time = 0, // Сумма общего времени
 sum_time_cpu = 0; // Сумма времени ЦП
 float total_el = 0;
+int num_pages = 5; // кол-во элементов на одной странице
+
 
 
 //===================
@@ -84,7 +86,7 @@ int read_file(string filename, time_task** beg, time_task** end); // ЧТЕНИ�
 int write_file(string filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[]); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
-void find(time_task* beg); // поик элемента по фамилии 
+void find(time_task* beg); // поиск
 void edit(time_task* end, time_task* real_beg, time_task* beg, int active, time_task* _edit_ob, int edit_count_num_pages, int edit_page); // редактирование элемента
 void cls(); // очистка экрана без мерцания 
 void sort(time_task* beg, int field_for_sort, int sort_direction); // сортировка
@@ -95,6 +97,7 @@ int compare(time_task* t_i, time_task* t_j, int num, int compare_direction); // 
 // ОСНОВНАЯ ПРОГРАММА
 //===================
 int main() {
+
 	SetColor(7, 0); // устанавливаем цвет текста и заднего фона чёрным
 	ShowWindow(GetConsoleWindow(), SW_MAXIMIZE); // полноэкранный режим
 
@@ -186,36 +189,112 @@ time_task* input(time_task * end, const time_task & s) {
 	return end;
 }
 
+// ==========ПЕРЕМЕЩЕНИЕ КУРСОРА НА ВЫБРАННУЮ ПОЗИЦИЮ==========
+void gotoxy(int xpos, int ypos)
+{
+	COORD scrn;
+	HANDLE hOuput = GetStdHandle(STD_OUTPUT_HANDLE);
+	scrn.X = xpos; scrn.Y = ypos;
+	SetConsoleCursorPosition(hOuput, scrn);
+}
+
+// ==========ОЧИСТКА СТРОКИ==========
+void clearRow(int row)
+{
+	DWORD a;
+	HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); // получаем хэндл окна консоли
+	COORD coord = { 0, row - 1 }; // получаем координаты строки для очистки 
+	CONSOLE_SCREEN_BUFFER_INFO csbi; 
+	GetConsoleScreenBufferInfo(hStdOut, &csbi); // получаем данные из буфера вывода консоли
+	FillConsoleOutputCharacter(hStdOut, ' ', 80, coord, &a); // заполняем строку пробелами
+}
+
+// ==========ПРОВЕРКИ НА СИМВОЛ И ДЛИНУ СТРОКИ==========
+string check_num(string field, int row, int max_length) {
+	do {
+		int fl = 0;
+		getline(cin, field);
+
+		if (field.length() > max_length) {
+			MessageBox(0, L"Слишком много символов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+			clearRow(row);
+			gotoxy(0, row - 1);
+			fl = 1;
+		}
+
+		// проверка на символ
+		for (int i = 0; i < field.length(); i++) {
+			if (!isdigit(field[i])) {
+				MessageBox(0, L"Нельзя вводить символы!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+				clearRow(row);
+				gotoxy(0, row - 1);
+				fl = 1;
+				break;
+			}
+		}
+
+		if (fl == 0) break;
+	} while (1);
+
+	return field;
+}
+
 // ==========ВВОД ДАННЫХ==========
 time_task input_info(time_task * beg) {
 	time_task t;
 	time_task* temp = beg;
+	int fl = 0;
 
 	cout << "Введите шифр задания (8 символов)" << endl;
-	cin >> t.d.cipher;
+	t.d.cipher = check_num(t.d.cipher, 2, 8);
 	cout << "Введите код отдела (3 символа)" << endl;
-	cin >> t.d.department_code;
+	t.d.department_code = check_num(t.d.department_code, 4, 3);
+
 	cout << "Введите ФИО (15 символов)" << endl;
-	cin >> t.d.fio;
-	for (int i = 0; i < t.d.fio.length(); i++) {
-		if (t.d.fio[i] >= '0' && t.d.fio[i] <= '9') {
-			cout << "Ошибка!" << endl;
-			system("pause");
+	do {
+		int fl = 0;
+		getline(cin, t.d.fio);
+
+		if (t.d.fio.length() > 15) {
+			MessageBox(0, L"Слишком много символов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+			clearRow(6);
+			gotoxy(0, 5);
+			fl = 1;
 		}
-	}
+
+		// проверка на число
+		for (int i = 0; i < t.d.fio.length(); i++) {
+			if (isdigit(t.d.fio[i])) {
+				MessageBox(0, L"В фамилии нельзя вводить цифры!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+				clearRow(6);
+				gotoxy(0, 5);
+				fl = 1;
+				break;
+			}
+		}
+
+		if (fl == 0) break;
+	} while (1);
+
 	do {
 		cout << "Введите общее время прохождения задания (5 символов)" << endl;
-		cin >> t.d.all_time;
+		t.d.all_time = check_num(t.d.all_time, 8, 5);
+
 		cout << "Введите время центрального процессора (5 символов)" << endl;
-		cin.ignore();
-		cin >> t.d.time_cpu;
+		t.d.time_cpu = check_num(t.d.time_cpu, 10, 5);
 
 		if (stoi(t.d.all_time) < stoi(t.d.time_cpu)) {
-			cout << "\n\nОбщее время должно быть больше времени центрального процессора!\n";
+			MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+			clearRow(7);
+			clearRow(8);
+			clearRow(9);
+			clearRow(10);
+			gotoxy(0, 6);
 		}
 		else break;
 
-	} while (true);
+	} while (1);
+
 	system("pause");
 	total_el++;
 
@@ -318,8 +397,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		* first_buf_el = beg,
 		* edit_ob = beg;
 
-	int num_pages		= 6, // кол-во элементов на одной странице
-		i				= 1, // номер текущего элемента
+	int i				= 1, // номер текущего элемента
 		first_i			= 0, // первый элемент в каждой странице
 		count_num_pages = print_count_num_pages, // счётчик для i (название не соответствует применению)
 		page			= print_page, // текущая страница
@@ -328,8 +406,6 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		remember_active = 0, // запоминающая переменная для active
 		direction		= 0, // направление сортировки (0 - от меньшего к большему, 1 - наоборот)
 		fl				= 0;
-
-	string mid_sort;
 
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	int ret = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
@@ -352,7 +428,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			num_pages = total_el;
 		}
 
-		if (active > num_pages || active == 0) {
+		if (active > num_pages || active == 0 || active == -1) {
 			temp = buf_el;
 			edit_ob = buf_el;
 		}
@@ -414,9 +490,6 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 
 			/*cout << "i = " << i;
 			cout << "active = " << active;*/
-			if (i == total_el / 2) {
-				mid_sort = temp->d.cipher;
-			}
 
 			// разукрашивание выбранного элемента
 			if (i == active) {
@@ -454,7 +527,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		buf = _getwch();
 		switch (buf) {
 		case up:
-				if (active == 0) break;
+				if (active == 0 || active == -1) break;
 				if (active > 1) active--;
 				if (active % num_pages == 0 || page == total_pages) {
 					page--;
@@ -464,6 +537,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				}
 			break;
 		case down:
+			if (active == -1) break;
 			if (active != 0) {
 				if (active % (num_pages) == 0) {
 					if (i == total_el) { // если это самый последний элемент
@@ -484,6 +558,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			}
 			break;
 		case right_btn:
+			if (active == -1) break;
 			if (active % num_pages == 0) {
 				if (sort_field < 5) {
 					sort_field++;
@@ -499,6 +574,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			}
 			break;
 		case left_btn:
+			if (active == -1) break;
 			if (active == 0) {
 				if (sort_field > 1) {
 					sort_field--;
@@ -536,13 +612,54 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			system("cls");
 			break;
 		case esc:
-			if (active == 0) {
+			if (active == 0 || active == -1) {
 				active = remember_active;
 				break;
 			} else {
 				return beg;
 			}
 		case enter:
+			if (active == -1) { // изменение кол-ва элементов на одной странице
+				do {
+					string str;
+					int fl = 0;
+					// установка курсора в правильное место
+					gotoxy(34, 2);
+					SetColor(7, 0);
+					cout << sets(50);
+					gotoxy(35, 2);
+					// =====================================
+					str = to_string(num_pages);
+					cin >> str;
+
+					// проверки на ошибки
+					try {
+						if (!isdigit(str[0])) { // если это символ
+							throw 1;
+						} else if (stoi(str) >= 2 && stoi(str) <= 10) {
+							num_pages = stoi(str);
+							break;
+						} else throw 2; // если число не попало в диапозон от 2 до 10
+					}
+					catch (int ex) {
+						if (ex == 1) {
+							MessageBox(0, L"Нельзя вводить символы!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+						} else if (ex == 2) {
+							MessageBox(0, L"Значение должно быть в диапозоне от 2 до 10!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+						}
+					}
+				} while (1);
+				
+				// делаем активным первый элемент
+				i = 1;
+				first_i = 0;
+				count_num_pages = 1;
+				page = 0; 
+				temp = buf_el = first_buf_el = beg;
+				active = 1;
+				system("cls");
+				break;
+			}
 			if (active == 0) {
 				sort(beg, sort_field, direction);
 				if (direction == 0) direction = sort_field; else direction = 0;
@@ -551,13 +668,24 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			edit(end, beg, buf_el, active, edit_ob, count_num_pages, page);
 			system("cls");
 			break;
-		case 115:
-		case 1099:
+		case 115: // символ s
+		case 1099: // символ ы
+			if (active == -1) break;
 			if (active == 0) {
 				active = remember_active;
 			} else {
 				remember_active = active;
 				active = 0;
+			}
+			break;
+		case 110: // символ n
+		case 1090: // символ т
+			if (active == -1) {
+				active = remember_active;
+			}
+			else {
+				remember_active = active;
+				active = -1;
 			}
 			break;
 		}
