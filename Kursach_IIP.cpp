@@ -13,11 +13,14 @@ using namespace std;
 //======================
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 //======================
-string filename = "person.txt";
+string filename;
+string All_bd = "mainBD.txt";
 int sum_all_time = 0, // Сумма общего времени
 sum_time_cpu = 0; // Сумма времени ЦП
 float total_el = 0;
-int num_pages = 5; // кол-во элементов на одной странице
+int num_pages = 5, // кол-во элементов на одной странице
+	width = 0, // ширина окна
+	height = 0; // высота окна
 
 
 
@@ -39,7 +42,7 @@ const string items[5] = {
 	"   Печать данных          ",
 	"   Запись данных в файл   ",
 	"   Поиск                  ",
-	"   Выход                  " };
+	"   Выбрать другой файл    " };
 
 // названия для сортировки 
 const string sort_items[5] = {
@@ -84,13 +87,16 @@ time_task input_info(time_task* beg); // ВВОД ДАННЫХ
 time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
 int read_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
 int write_file(string filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
-int menu(int& active, const string items[]); // МЕНЮ
+int menu(int& active, const string items[], int num_el); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поиск
 void edit(time_task* end, time_task* real_beg, time_task* beg, int active, time_task* _edit_ob, int edit_count_num_pages, int edit_page); // редактирование элемента
 void cls(); // очистка экрана без мерцания 
 void sort(time_task* beg, int field_for_sort, int sort_direction); // сортировка
 int compare(time_task* t_i, time_task* t_j, int num, int compare_direction); // сравнение данных для сортировки
+void gotoxy(int xpos, int ypos); // ПЕРЕМЕЩЕНИЕ КУРСОРА НА ВЫБРАННУЮ ПОЗИЦИЮ
+time_task* first_start(time_task** beg, time_task** end); // ВЫБОР БД
+string sets(size_t size); // АНАЛОГ setw()
 
 
 //===================
@@ -98,76 +104,162 @@ int compare(time_task* t_i, time_task* t_j, int num, int compare_direction); // 
 //===================
 int main() {
 
+	//========================
+	//========================
+	//========================
+	HANDLE hCon;
+
+	// вытаскиваем ширину и высоту
+	hCon = GetStdHandle(-12);
+	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+	if (GetConsoleScreenBufferInfo(hCon, &consoleInfo))
+	{
+		width = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1;
+		height = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1;
+	}
+
+	// меняем размер шрифта
+	CONSOLE_FONT_INFOEX cfi;
+	cfi.cbSize = sizeof(cfi);
+	cfi.nFont = 0;
+	cfi.dwFontSize.X = 0;                   // Width of each character in the font
+	cfi.dwFontSize.Y = 24;                  // Height
+	cfi.FontFamily = FF_DONTCARE;
+	cfi.FontWeight = FW_NORMAL;
+	SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
+	//========================
+	//========================
+	//========================
+
 	SetColor(7, 0); // устанавливаем цвет текста и заднего фона чёрным
 	ShowWindow(GetConsoleWindow(), SW_MAXIMIZE); // полноэкранный режим
 
-	int item = 0;
+	int item = 0,
+		current = 1;
 	time_task* beg = 0,
 		* end = 0;
 
-	read_file(filename, &beg, &end);
-
-	// считаем сумму общего времени и сумму времени ЦП
-	for (time_task *temp = beg; temp; temp = temp->next) {
-		sum_all_time += stoi(temp->d.all_time);
-		sum_time_cpu += stoi(temp->d.time_cpu);
-	}
+	first_start(&beg, &end);
 
 	while (1) {
-		int current = 1;
-		while (1) {
+		system("cls");
+
+		// выводим название раздела
+		SetColor(7, 5);
+		gotoxy(width / 2 + 1, 3);
+		cout << "            ";
+		gotoxy(width / 2 + 1, 4);
+		cout << "    МЕНЮ    ";
+		gotoxy(width / 2 + 1, 5);
+		cout << "            ";
+
+		switch (menu(current, items, 6)) {
+		// Добавление элемента в список
+		case 1:
 			system("cls");
-			switch (menu(current, items)) {
-				// Добавление элемента в список
-			case 1:
-				system("cls");
-				if (beg) {
-					end = input(end, input_info(beg));
-				}
-				else {
-					beg = input(input_info(beg));
-					end = beg;
-				}
-				break;
-
-				// Печать элементов
-			case 2:
-				system("cls");
-				beg = print(end, beg, beg, 1, 0, 1, 0);
-				break;
-
-				// Запись в файл
-			case 3:
-				write_file(filename, beg);
-				MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
-				break;
-
-				// Поиск элемента
-			case 4:
-				system("cls");
-				find(beg);
-				break;
-
-				// выход из программы
-			case 5:
-				/*if (MessageBox(0, L"Хотите сохранить БД?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
-					write_file(filename, beg);
-				}*/
-				return 0;
-			default:
-				cout << "Неверно введён номер!" << endl;
-				system("pause");
-				break;
+			if (beg) {
+				end = input(end, input_info(beg));
 			}
+			else {
+				beg = input(input_info(beg));
+				end = beg;
+			}
+			break;
+
+			// Печать элементов
+		case 2:
+			system("cls");
+			beg = print(end, beg, beg, 1, 0, 1, 0);
+			break;
+
+			// Запись в файл
+		case 3:
+			write_file(filename, beg);
+			MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
+			break;
+
+			// Поиск элемента
+		case 4:
+			system("cls");
+			find(beg);
+			break;
+
+			// выход из программы
+		case -1:
+			/*if (MessageBox(0, L"Хотите сохранить БД?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
+				write_file(filename, beg);
+			}*/
+			beg = end = first_start(&beg, &end);
 		}
 	}
-
 }
 
 //===================
 // ФУНКЦИИ
 //===================
 
+// ==========ВЫБОР БД (первый запуск)==========
+time_task* first_start(time_task** beg, time_task** end) {
+	const int SIZE = 50;
+	int k = 1,
+		current = 1, 
+		fl = 0;
+
+	// массив всех названий файлов
+	string arr_filename[SIZE] = {
+	"    Добавить новую БД    "
+	}; 
+
+	// +++++++ОТКРЫВАЕМ ФАЙЛ СО ВСЕМИ БД+++++++
+	ifstream fin;
+	fin.open(All_bd);
+
+	if (!fin) {
+		MessageBox(0, L"Невозможно открыть файл!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
+		return 0;
+	}
+
+	while (getline(fin, arr_filename[k++])) {
+		
+		if (k >= 50) {
+			MessageBox(0, L"Выведены первые 50 файлов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+		}
+	}
+
+	// ++++++++++++++++++++++++++++++++++++++++++
+
+	system("cls");
+
+	// выводим название раздела
+	SetColor(7, 5);
+	gotoxy(width / 2 - 12, 3);
+	cout << sets(36);
+	gotoxy(width / 2 - 12, 4);
+	cout << "             ВЫБОР ФАЙЛА            ";
+	gotoxy(width / 2 - 12, 5);
+	cout << "  выберите откуда считывать данные  ";
+	gotoxy(width / 2 - 12, 6);
+	cout << sets(36);
+
+	int main_bd = menu(current, arr_filename, k);
+	if (main_bd == -1) {
+		exit(1);
+	} else {
+		filename = arr_filename[main_bd - 1];
+		if (main_bd - 1 != 0) {
+			read_file(filename, beg, end);
+
+			// считаем сумму общего времени и сумму времени ЦП
+			sum_all_time = sum_time_cpu = 0;
+			for (time_task* temp = *beg; temp; temp = temp->next) {
+				sum_all_time += stoi(temp->d.all_time);
+				sum_time_cpu += stoi(temp->d.time_cpu);
+			}
+
+			return *beg;
+		} else return 0;
+	}
+}
 
 // ==========ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА==========
 time_task* input(const time_task & s) {
@@ -431,8 +523,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		if (active > num_pages || active == 0 || active == -1) {
 			temp = buf_el;
 			edit_ob = buf_el;
-		}
-		else {
+		} else {
 			temp = beg;
 			edit_ob = beg;
 		}
@@ -887,6 +978,7 @@ void find(time_task * beg) {
 // ==========ЧТЕНИЕ ИЗ ФАЙЛА==========
 int read_file(string filename, time_task * *beg, time_task * *end) {
 	int k = 0;
+	total_el = 0;
 	ifstream fin;
 	fin.open(filename);
 
@@ -915,8 +1007,11 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 
 // ==========ЗАПИСЬ В ФАЙЛ==========
 int write_file(string filename, time_task * temp) {
+	cout << "Введите название файла:" << endl;
+	cin >> filename;
+
 	ofstream fout;
-	fout.open(filename);
+	fout.open(filename + ".txt");
 
 	if (!fout) {
 		cout << "Невозможно открыть файл для записи" << endl;
@@ -940,44 +1035,9 @@ int write_file(string filename, time_task * temp) {
 void print_menu(int sym, const string items[]) {
 	const int N_ITEMS = 5;
 
-	//========================
-	//========================
-	//========================
-	HANDLE hCon;
-	COORD cPos;
-	int width = 0, height = 0;
-
-	// вытаскиваем ширину и высоту
-	hCon = GetStdHandle(-12);
-	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
-	if (GetConsoleScreenBufferInfo(hCon, &consoleInfo))
-	{
-		width = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1;
-		height = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1;
-	}
-
-	// меняем положение меню
-	hCon = GetStdHandle(STD_OUTPUT_HANDLE);
-	cPos.Y = 15;
-	cPos.X = 0;
-	SetConsoleCursorPosition(hCon, cPos);
-
-	// меняем размер шрифта
-	CONSOLE_FONT_INFOEX cfi;
-	cfi.cbSize = sizeof(cfi);
-	cfi.nFont = 0;
-	cfi.dwFontSize.X = 0;                   // Width of each character in the font
-	cfi.dwFontSize.Y = 24;                  // Height
-	cfi.FontFamily = FF_DONTCARE;
-	cfi.FontWeight = FW_NORMAL;
-	SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
-	//========================
-	//========================
-	//========================
 	for (int i = 1; i <= N_ITEMS; i++) {
-
 		SetColor(7, 0);
-		cout << "                                             ";
+		gotoxy((width / 2) - 6, (height / 2) + i - 3); // ставим меню в центр
 		if (i == sym) {
 			SetColor(7, 5);
 		}
@@ -987,7 +1047,7 @@ void print_menu(int sym, const string items[]) {
 }
 
 // ==========МЕНЮ==========
-int menu(int& active, const string items[]) {
+int menu(int& active, const string items[], int num_el) {
 	wint_t buf;
 
 	do {
@@ -1000,12 +1060,13 @@ int menu(int& active, const string items[]) {
 			if (active > 1) active--;
 			break;
 		case down: // клавиша вниз
-			if (active < 5) active++;
+			if (active < num_el - 1) active++;
 			break;
 		case enter: // клавиша enter
+			if (active == 5) return -1;
 			return active;
 		case esc: // клавиша escape
-			return 5;
+			return -1;
 		}
 	} while (1);
 }

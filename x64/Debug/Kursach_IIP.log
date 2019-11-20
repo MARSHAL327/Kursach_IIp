@@ -1,5 +1,5 @@
 ﻿  Kursach_IIP.cpp
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(207): warning C4838: преобразование из "int" в "SHORT" требует сужающего преобразования
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(429): warning C4244: =: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(519): warning C4244: аргумент: преобразование "double" в "std::streamsize", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(298): warning C4838: преобразование из "int" в "SHORT" требует сужающего преобразования
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(520): warning C4244: =: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(609): warning C4244: аргумент: преобразование "double" в "std::streamsize", возможна потеря данных
   Kursach_IIP.vcxproj -> C:\Users\sanya\Desktop\Kurasach_IIP-master\x64\Debug\Kursach_IIP.exe
