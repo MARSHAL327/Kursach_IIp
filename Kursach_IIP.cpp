@@ -59,9 +59,9 @@ const string sort_items[5] = {
 struct info {
 	string cipher;
 	string department_code;
+	string fio;
 	string all_time;
 	string time_cpu;
-	string fio;
 };
 
 
@@ -81,8 +81,9 @@ struct time_task {
 time_task* print(time_task* end, time_task* real_beg ,time_task* beg, int active, int edit_el, int print_count_num_pages, int print_page); // ВЫВОД ДАННЫХ
 void print_info(const time_task& t, int active); // ПЕЧАТЬ СОДЕРЖИМОГО
 void print_menu(int sym, const string items[], const int N_ITEMS); // ШАБЛОН ПЕЧАТИ МЕНЮ
-time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ
-time_task* input(const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА
+/*time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ
+time_task* input(const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА*/
+void input(time_task*& beg, time_task*& end, const time_task& info);
 time_task input_info(time_task* beg); // ВВОД ДАННЫХ
 time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
 int read_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
@@ -158,13 +159,7 @@ int main() {
 		// Добавление элемента в список
 		case 1:
 			system("cls");
-			if (beg) {
-				end = input(end, input_info(beg));
-			}
-			else {
-				beg = input(input_info(beg));
-				end = beg;
-			}
+			input(beg, end, input_info(beg));
 			break;
 
 			// Печать элементов
@@ -185,7 +180,7 @@ int main() {
 			break;
 
 			// выход из программы
-		case -1:
+		case 5:
 			/*if (MessageBox(0, L"Хотите сохранить БД?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
 				write_file(filename, beg);
 			}*/
@@ -204,6 +199,7 @@ time_task* first_start(time_task** beg, time_task** end) {
 	int k = 1,
 		current = 1, 
 		fl = 0;
+	num_pages = 5;
 
 	// массив всех названий файлов
 	string arr_filename[SIZE] = {
@@ -243,10 +239,12 @@ time_task* first_start(time_task** beg, time_task** end) {
 
 	size_t pos = 0;
 	int main_bd = menu(current, arr_filename, k);
+
 	if (main_bd == -1) {
-		exit(1);
+		exit(0);
 	} else {
 		filename = arr_filename[main_bd - 1];
+
 		if (main_bd - 1 != 0) {
 			pos = filename.find(".txt", filename.length() - 4); // ищем .txt в названии файла, если вернёт -1, то это бинарный
 
@@ -266,26 +264,6 @@ time_task* first_start(time_task** beg, time_task** end) {
 			return *beg;
 		} else return 0;
 	}
-}
-
-// ==========ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА==========
-time_task* input(const time_task & s) {
-	time_task* beg = new time_task;
-	*beg = s;
-	beg->next = 0;
-	beg->prev = 0;
-	return beg;
-}
-
-// ==========ВЫДЕЛЕНИЕ ПАМЯТИ==========
-time_task* input(time_task * end, const time_task & s) {
-	time_task* newE = new time_task;
-	*newE = s;
-	newE->next = 0;
-	newE->prev = end;
-	end->next = newE;
-	end = newE;
-	return end;
 }
 
 // ==========ПЕРЕМЕЩЕНИЕ КУРСОРА НА ВЫБРАННУЮ ПОЗИЦИЮ==========
@@ -308,6 +286,22 @@ void clearRow(int row)
 	FillConsoleOutputCharacter(hStdOut, ' ', 80, coord, &a); // заполняем строку пробелами
 }
 
+// ==========ВЫДЕЛЕНИЕ ПАМЯТИ==========
+void input(time_task*& beg, time_task*& end, const time_task& info) {
+	time_task* newel = new time_task;
+	newel->next = NULL;
+	newel->prev = NULL;
+	newel->d = info.d;
+	if (!beg) {
+		beg = end = newel;
+	}
+	else {
+		end->next = newel;
+		newel->prev = end;
+		end = newel;
+	}
+}
+
 // ==========ПРОВЕРКИ НА СИМВОЛ И ДЛИНУ СТРОКИ==========
 string check_num(string field, int row, int max_length) {
 	do {
@@ -323,7 +317,7 @@ string check_num(string field, int row, int max_length) {
 
 		// проверка на символ
 		for (int i = 0; i < field.length(); i++) {
-			if (!isdigit(field[i])) {
+			if ( !(field[i] >= '0' && field[i] <= '9') ) {
 				MessageBox(0, L"Нельзя вводить символы!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
 				clearRow(row);
 				gotoxy(0, row - 1);
@@ -363,7 +357,7 @@ time_task input_info(time_task * beg) {
 
 		// проверка на число
 		for (int i = 0; i < t.d.fio.length(); i++) {
-			if (isdigit(t.d.fio[i])) {
+			if (t.d.fio[i] >= '0' && t.d.fio[i] <= '9') {
 				MessageBox(0, L"В фамилии нельзя вводить цифры!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
 				clearRow(6);
 				gotoxy(0, 5);
@@ -625,7 +619,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		buf = _getwch();
 		switch (buf) {
 		case up:
-				if (active == 0 || active == -1) break;
+				if (active == 0 || active == -1 || total_el == 1) break;
 				if (active > 1) active--;
 				if (active % num_pages == 0 || page == total_pages) {
 					page--;
@@ -635,7 +629,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				}
 			break;
 		case down:
-			if (active == -1) break;
+			if (active == -1 || total_el == 1) break;
 			if (active != 0) {
 				if (active % (num_pages) == 0) {
 					if (i == total_el) { // если это самый последний элемент
@@ -656,7 +650,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			}
 			break;
 		case right_btn:
-			if (active == -1) break;
+			if (active == -1 || total_el == 1) break;
 			if (active % num_pages == 0) {
 				if (sort_field < 5) {
 					sort_field++;
@@ -672,7 +666,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			}
 			break;
 		case left_btn:
-			if (active == -1) break;
+			if (active == -1 || total_el == 1) break;
 			if (active == 0) {
 				if (sort_field > 1) {
 					sort_field--;
@@ -732,7 +726,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 
 					// проверки на ошибки
 					try {
-						if (!isdigit(str[0])) { // если это символ
+						if ( !(str[0] >= '0' && str[0] <= '9') ) { // если это символ
 							throw 1;
 						} else if (stoi(str) >= 2 && stoi(str) <= 10) {
 							num_pages = stoi(str);
@@ -983,50 +977,30 @@ void find(time_task * beg) {
 }
 
 
-
-void add_info_to_spisok(time_task*& beg, time_task*& end, info& info) {
-	cout << "add_fio = " << info.all_time << endl;
-	system("pause");
-	time_task* newel = new time_task;
-	newel->next = NULL;
-	newel->prev = NULL;
-	newel->d = info;
-	if (!beg) {
-		beg = end = newel;
-		//Elements = 1;
-	}
-	else {
-		end->next = newel;
-		newel->prev = end;
-		end = newel;
-		//Elements++;
-	}
-}
-
-
 // ==========ЧТЕНИЕ ИЗ БИНАРНОГО ФАЙЛА==========
 int read_bin_file(string filename, time_task** beg, time_task** end) {
 	total_el = 0;
 
 	ifstream fin;
-	fin.open(filename);
+	fin.open(filename, ios::binary);
 
 	if (!fin) {
 		MessageBox(0, L"Нет файла!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
 		return 1;
 	}
 
-	fin.seekg(ios::beg);
+	fin.seekg(ios_base::beg);
 	time_task* t = new time_task;
 	t->next = NULL;
 	t->prev = NULL;
 	*beg = 0;
-	
-	while ( fin.read((char*)& t->d, sizeof(t->d)) ) {
-		add_info_to_spisok(*beg, *end, t->d);
+
+	while (fin.read((char*)& t->d, sizeof(t->d)) ) {
+		input(*beg, *end, *t);
 		total_el++;
 	}
 
+	fin.close();
 	return 0;
 }
 
@@ -1050,11 +1024,7 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 		getline(fin, t.d.all_time);
 		getline(fin, t.d.time_cpu);
 
-		if (*beg)
-			* end = input(*end, t);
-		else {
-			*beg = input(t); *end = *beg;
-		}
+		input(*beg, *end, t);
 		total_el++;
 	}
 
@@ -1070,14 +1040,16 @@ int write_file(time_task * temp) {
 
 	// выводим название раздела
 	SetColor(7, 5);
-	gotoxy(width / 2 - 15, 3);
-	cout << sets(40);
-	gotoxy(width / 2 - 15, 4);
-	cout << "            ВЫБОР ТИПА ФАЙЛА            ";
-	gotoxy(width / 2 - 15, 5);
-	cout << "    выберите тип файла для сохранения   ";
-	gotoxy(width / 2 - 15, 6);
-	cout << sets(40);
+	gotoxy(width / 2 - 16, 3);
+	cout << sets(41);
+	gotoxy(width / 2 - 16, 4);
+	cout << "            ВЫБОР ТИПА ФАЙЛА             ";
+	gotoxy(width / 2 - 16, 5);
+	cout << "    Выберите тип файла для сохранения.   ";
+	gotoxy(width / 2 - 16, 6);
+	cout << "    (Расширение файла вводить не надо)   ";
+	gotoxy(width / 2 - 16, 7);
+	cout << sets(41);
 
 	const string items[2] = {
 		"   Текстовый          ",
@@ -1093,6 +1065,12 @@ int write_file(time_task * temp) {
 	ofstream fout; // файл в который производится запись данных
 	ofstream fout_all_bd("mainBD.txt", ios_base::app); // файл в который производится запись названия файла
 
+	// обработка ошибок
+	if (!fout || !fout_all_bd) {
+		MessageBox(0, L"Невозможно открыть файл для записи!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
+		return 1;
+	}
+
 	// определяем тип файла
 	if (is_text == 1) {
 		fout.open(filename + ".txt");
@@ -1102,11 +1080,7 @@ int write_file(time_task * temp) {
 		fout_all_bd << filename + ".bin" << endl; // запись в общий файл названия БД
 	}
 	
-	// обработка ошибок
-	if (!fout || !fout_all_bd) {
-		MessageBox(0, L"Невозможно открыть файл для записи!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
-		return 1;
-	}
+
 
 	if (is_text == 1) {
 		while (temp) {
@@ -1159,7 +1133,6 @@ int menu(int& active, const string items[], int num_el) {
 			if (active < num_el - 1) active++;
 			break;
 		case enter: // клавиша enter
-			if (active == 5) return -1;
 			return active;
 		case esc: // клавиша escape
 			return -1;
