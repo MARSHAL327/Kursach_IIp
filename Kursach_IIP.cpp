@@ -80,13 +80,14 @@ struct time_task {
 //===================
 time_task* print(time_task* end, time_task* real_beg ,time_task* beg, int active, int edit_el, int print_count_num_pages, int print_page); // ВЫВОД ДАННЫХ
 void print_info(const time_task& t, int active); // ПЕЧАТЬ СОДЕРЖИМОГО
-void print_menu(int sym, const string items[]); // ШАБЛОН ПЕЧАТИ МЕНЮ
+void print_menu(int sym, const string items[], const int N_ITEMS); // ШАБЛОН ПЕЧАТИ МЕНЮ
 time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ
 time_task* input(const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА
 time_task input_info(time_task* beg); // ВВОД ДАННЫХ
 time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
 int read_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
-int write_file(string filename, time_task* temp); // ЗАПИСЬ В ФАЙЛ
+int read_bin_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ БИНАРНОГО ФАЙЛА
+int write_file(time_task* temp); // ЗАПИСЬ В ФАЙЛ
 int menu(int& active, const string items[], int num_el); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поиск
@@ -174,8 +175,7 @@ int main() {
 
 			// Запись в файл
 		case 3:
-			write_file(filename, beg);
-			MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
+			write_file(beg);
 			break;
 
 			// Поиск элемента
@@ -241,14 +241,21 @@ time_task* first_start(time_task** beg, time_task** end) {
 	gotoxy(width / 2 - 12, 6);
 	cout << sets(36);
 
+	size_t pos = 0;
 	int main_bd = menu(current, arr_filename, k);
 	if (main_bd == -1) {
 		exit(1);
 	} else {
 		filename = arr_filename[main_bd - 1];
 		if (main_bd - 1 != 0) {
-			read_file(filename, beg, end);
+			pos = filename.find(".txt", filename.length() - 4); // ищем .txt в названии файла, если вернёт -1, то это бинарный
 
+			if (pos != -1) {
+				read_file(filename, beg, end);
+			} else {
+				read_bin_file(filename, beg, end);
+			}
+			
 			// считаем сумму общего времени и сумму времени ЦП
 			sum_all_time = sum_time_cpu = 0;
 			for (time_task* temp = *beg; temp; temp = temp->next) {
@@ -975,6 +982,54 @@ void find(time_task * beg) {
 	} else system("pause");
 }
 
+
+
+void add_info_to_spisok(time_task*& beg, time_task*& end, info& info) {
+	cout << "add_fio = " << info.all_time << endl;
+	system("pause");
+	time_task* newel = new time_task;
+	newel->next = NULL;
+	newel->prev = NULL;
+	newel->d = info;
+	if (!beg) {
+		beg = end = newel;
+		//Elements = 1;
+	}
+	else {
+		end->next = newel;
+		newel->prev = end;
+		end = newel;
+		//Elements++;
+	}
+}
+
+
+// ==========ЧТЕНИЕ ИЗ БИНАРНОГО ФАЙЛА==========
+int read_bin_file(string filename, time_task** beg, time_task** end) {
+	total_el = 0;
+
+	ifstream fin;
+	fin.open(filename);
+
+	if (!fin) {
+		MessageBox(0, L"Нет файла!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
+		return 1;
+	}
+
+	fin.seekg(ios::beg);
+	time_task* t = new time_task;
+	t->next = NULL;
+	t->prev = NULL;
+	*beg = 0;
+	
+	while ( fin.read((char*)& t->d, sizeof(t->d)) ) {
+		add_info_to_spisok(*beg, *end, t->d);
+		total_el++;
+	}
+
+	return 0;
+}
+
 // ==========ЧТЕНИЕ ИЗ ФАЙЛА==========
 int read_file(string filename, time_task * *beg, time_task * *end) {
 	int k = 0;
@@ -983,7 +1038,7 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 	fin.open(filename);
 
 	if (!fin) {
-		cout << "Нет файла" << filename << endl;
+		MessageBox(0, L"Нет файла!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
 		return 1;
 	}
 
@@ -994,6 +1049,7 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 		getline(fin, t.d.fio);
 		getline(fin, t.d.all_time);
 		getline(fin, t.d.time_cpu);
+
 		if (*beg)
 			* end = input(*end, t);
 		else {
@@ -1006,35 +1062,75 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 }
 
 // ==========ЗАПИСЬ В ФАЙЛ==========
-int write_file(string filename, time_task * temp) {
+int write_file(time_task * temp) {
+
+	// МЕНЮ ДЛЯ ЗАПИСИ В ФАЙЛ
+	int active_file = 1;
+	system("cls");
+
+	// выводим название раздела
+	SetColor(7, 5);
+	gotoxy(width / 2 - 15, 3);
+	cout << sets(40);
+	gotoxy(width / 2 - 15, 4);
+	cout << "            ВЫБОР ТИПА ФАЙЛА            ";
+	gotoxy(width / 2 - 15, 5);
+	cout << "    выберите тип файла для сохранения   ";
+	gotoxy(width / 2 - 15, 6);
+	cout << sets(40);
+
+	const string items[2] = {
+		"   Текстовый          ",
+		"   Бинарный           "};
+
+	int is_text = menu(active_file, items, 3);
+	if (is_text == -1) return 0;
+	// ======================
+
 	cout << "Введите название файла:" << endl;
 	cin >> filename;
 
-	ofstream fout;
-	fout.open(filename + ".txt");
+	ofstream fout; // файл в который производится запись данных
+	ofstream fout_all_bd("mainBD.txt", ios_base::app); // файл в который производится запись названия файла
 
-	if (!fout) {
-		cout << "Невозможно открыть файл для записи" << endl;
+	// определяем тип файла
+	if (is_text == 1) {
+		fout.open(filename + ".txt");
+		fout_all_bd << filename + ".txt" << endl; // запись в общий файл названия БД
+	} else {
+		fout.open(filename + ".bin", ios::binary | ios::out);
+		fout_all_bd << filename + ".bin" << endl; // запись в общий файл названия БД
+	}
+	
+	// обработка ошибок
+	if (!fout || !fout_all_bd) {
+		MessageBox(0, L"Невозможно открыть файл для записи!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
 		return 1;
 	}
 
-	while (temp) {
-		fout << temp->d.cipher << endl;
-		fout << temp->d.department_code << endl;
-		fout << temp->d.fio << endl;
-		fout << temp->d.all_time << endl;
-		fout << temp->d.time_cpu << endl;
-		temp = temp->next;
-	}
+	if (is_text == 1) {
+		while (temp) {
+			fout << temp->d.cipher << endl;
+			fout << temp->d.department_code << endl;
+			fout << temp->d.fio << endl;
+			fout << temp->d.all_time << endl;
+			fout << temp->d.time_cpu << endl;
+			temp = temp->next;
+		}
 
+		MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
+	} else {
+		while (temp) {
+			fout.write((char*)& temp->d, sizeof temp->d);
+			temp = temp->next;
+		}
+	}
 	return 0;
 }
 
 
 // ==========ШАБЛОН ПЕЧАТИ МЕНЮ==========
-void print_menu(int sym, const string items[]) {
-	const int N_ITEMS = 5;
-
+void print_menu(int sym, const string items[], const int N_ITEMS) {
 	for (int i = 1; i <= N_ITEMS; i++) {
 		SetColor(7, 0);
 		gotoxy((width / 2) - 6, (height / 2) + i - 3); // ставим меню в центр
@@ -1052,7 +1148,7 @@ int menu(int& active, const string items[], int num_el) {
 
 	do {
 		cls();
-		print_menu(active, items);
+		print_menu(active, items, num_el - 1);
 
 		buf = _getwch();
 		switch (buf) {
