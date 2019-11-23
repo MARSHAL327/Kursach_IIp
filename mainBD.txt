@@ -1,5 +1,4 @@
 person.txt
-red.txt
-its.txt
 36436.bin
-12321312.txt
+person1.txt
+2.txt

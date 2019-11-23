@@ -15,12 +15,13 @@ using namespace std;
 //======================
 string filename;
 string All_bd = "mainBD.txt";
-int sum_all_time = 0, // Сумма общего времени
-sum_time_cpu = 0; // Сумма времени ЦП
 float total_el = 0;
-int num_pages = 5, // кол-во элементов на одной странице
-	width = 0, // ширина окна
-	height = 0; // высота окна
+int num_pages	 = 5, // Кол-во элементов на одной странице
+	width		 = 0, // Ширина окна
+	height		 = 0, // Высота окна
+	sum_all_time = 0, // Сумма общего времени
+	sum_time_cpu = 0, // Сумма времени ЦП
+	average_percent_time_cpu = 0; // Средний процент процессорного времени
 
 
 
@@ -36,13 +37,16 @@ enter = 13,
 esc = 27,
 del = 83;
 
+const int SIZE_arr_filename = 50;
+
 // названия пунктов
-const string items[5] = {
+const string items[6] = {
 	"   Ввод данных            ",
 	"   Печать данных          ",
 	"   Запись данных в файл   ",
 	"   Поиск                  ",
-	"   Выбрать другой файл    " };
+	"   Выбрать другой файл    ",
+	"   Выход из программы     " };
 
 // названия для сортировки 
 const string sort_items[5] = {
@@ -50,8 +54,12 @@ const string sort_items[5] = {
 	"Код отдела ",
 	"ФИО ",
 	"Общее время ",
-	"Время ЦП |" };
+	"Время ЦП" };
 
+// массив всех названий файлов
+string arr_filename[SIZE_arr_filename] = {
+"    Добавить новую БД    "
+};
 
 //===================
 // ДАННЫЕ
@@ -81,8 +89,6 @@ struct time_task {
 time_task* print(time_task* end, time_task* real_beg ,time_task* beg, int active, int edit_el, int print_count_num_pages, int print_page); // ВЫВОД ДАННЫХ
 void print_info(const time_task& t, int active); // ПЕЧАТЬ СОДЕРЖИМОГО
 void print_menu(int sym, const string items[], const int N_ITEMS); // ШАБЛОН ПЕЧАТИ МЕНЮ
-/*time_task* input(time_task* end, const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ
-time_task* input(const time_task& s); // ВЫДЕЛЕНИЕ ПАМЯТИ ДЛЯ ПЕРВОГО ЭЛЕМЕНТА*/
 void input(time_task*& beg, time_task*& end, const time_task& info);
 time_task input_info(time_task* beg); // ВВОД ДАННЫХ
 time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
@@ -99,6 +105,8 @@ int compare(time_task* t_i, time_task* t_j, int num, int compare_direction); // 
 void gotoxy(int xpos, int ypos); // ПЕРЕМЕЩЕНИЕ КУРСОРА НА ВЫБРАННУЮ ПОЗИЦИЮ
 time_task* first_start(time_task** beg, time_task** end); // ВЫБОР БД
 string sets(size_t size); // АНАЛОГ setw()
+float percent_time_cpu(float a, float b); // РАСЧЁТ ПРОЦЕНТА ПРОЦЕССОРНОГО ВРЕМЕНИ
+void show_filename(int posX, int posY); // ПОКАЗЫВАЕМ КАКОЙ РЕДАКТИРУЕТСЯ ФАЙЛ
 
 
 //===================
@@ -146,6 +154,8 @@ int main() {
 	while (1) {
 		system("cls");
 
+		show_filename(width - filename.length() - 9, 0);
+
 		// выводим название раздела
 		SetColor(7, 5);
 		gotoxy(width / 2 + 1, 3);
@@ -155,36 +165,51 @@ int main() {
 		gotoxy(width / 2 + 1, 5);
 		cout << "            ";
 
-		switch (menu(current, items, 6)) {
+		switch (menu(current, items, 7)) {
 		// Добавление элемента в список
 		case 1:
 			system("cls");
+			show_filename(width - filename.length() - 9, 0);
+
 			input(beg, end, input_info(beg));
 			break;
 
 			// Печать элементов
 		case 2:
 			system("cls");
+			show_filename(width - filename.length() - 9, 0);
+
 			beg = print(end, beg, beg, 1, 0, 1, 0);
 			break;
 
 			// Запись в файл
 		case 3:
+			system("cls");
+			show_filename(width - filename.length() - 9, 0);
 			write_file(beg);
 			break;
 
 			// Поиск элемента
 		case 4:
 			system("cls");
+			show_filename(width - filename.length() - 9, 0);
 			find(beg);
 			break;
 
-			// выход из программы
+			// выбор другого файла
 		case 5:
-			/*if (MessageBox(0, L"Хотите сохранить БД?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
-				write_file(filename, beg);
-			}*/
+			if (beg) {
+				if (MessageBox(0, L"Хотите сохранить данные?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
+					write_file(beg);
+				}
+			}
 			beg = end = first_start(&beg, &end);
+			break;
+		case 6:
+		case -1:
+			if (MessageBox(0, L"Вы уверены, что хотите выйти?", L"Уведомление", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
+				return 0;
+			} else break;
 		}
 	}
 }
@@ -193,76 +218,121 @@ int main() {
 // ФУНКЦИИ
 //===================
 
+// =========ПОКАЗЫВАЕМ КАКОЙ РЕДАКТИРУЕТСЯ ФАЙЛ=========
+void show_filename(int posX, int posY) {
+	gotoxy(posX, posY);
+	cout << "Редактируемый файл: ";
+	SetColor(7, 8);
+	cout << " " << filename << " ";
+	SetColor(7, 0);
+	gotoxy(0, 0);
+}
+
 // ==========ВЫБОР БД (первый запуск)==========
 time_task* first_start(time_task** beg, time_task** end) {
-	const int SIZE = 50;
 	int k = 1,
-		current = 1, 
-		fl = 0;
+		current = 1,
+		fl = 0,
+		new_line = 0;
 	num_pages = 5;
 
-	// массив всех названий файлов
-	string arr_filename[SIZE] = {
-	"    Добавить новую БД    "
-	}; 
+	while (1) {
+		k = 1;
 
-	// +++++++ОТКРЫВАЕМ ФАЙЛ СО ВСЕМИ БД+++++++
-	ifstream fin;
-	fin.open(All_bd);
+		int exit_fl = 0;
+		//system("cls");
+		// +++++++ОТКРЫВАЕМ ФАЙЛ СО ВСЕМИ БД+++++++
+		ifstream fin;
+		fin.open(All_bd);
 
-	if (!fin) {
-		MessageBox(0, L"Невозможно открыть файл!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
-		return 0;
-	}
-
-	while (getline(fin, arr_filename[k++])) {
-		
-		if (k >= 50) {
-			MessageBox(0, L"Выведены первые 50 файлов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+		if (!fin) {
+			MessageBox(0, L"Невозможно открыть файл!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
+			return 0;
 		}
-	}
 
-	// ++++++++++++++++++++++++++++++++++++++++++
-
-	system("cls");
-
-	// выводим название раздела
-	SetColor(7, 5);
-	gotoxy(width / 2 - 12, 3);
-	cout << sets(36);
-	gotoxy(width / 2 - 12, 4);
-	cout << "             ВЫБОР ФАЙЛА            ";
-	gotoxy(width / 2 - 12, 5);
-	cout << "  выберите откуда считывать данные  ";
-	gotoxy(width / 2 - 12, 6);
-	cout << sets(36);
-
-	size_t pos = 0;
-	int main_bd = menu(current, arr_filename, k);
-
-	if (main_bd == -1) {
-		exit(0);
-	} else {
-		filename = arr_filename[main_bd - 1];
-
-		if (main_bd - 1 != 0) {
-			pos = filename.find(".txt", filename.length() - 4); // ищем .txt в названии файла, если вернёт -1, то это бинарный
-
-			if (pos != -1) {
-				read_file(filename, beg, end);
-			} else {
-				read_bin_file(filename, beg, end);
+		// записываем считанные данные в массив
+		while (getline(fin, arr_filename[k++])) {
+			if (k >= 50) {
+				MessageBox(0, L"Выведены первые 50 файлов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
 			}
-			
-			// считаем сумму общего времени и сумму времени ЦП
-			sum_all_time = sum_time_cpu = 0;
-			for (time_task* temp = *beg; temp; temp = temp->next) {
-				sum_all_time += stoi(temp->d.all_time);
-				sum_time_cpu += stoi(temp->d.time_cpu);
-			}
+		}
 
-			return *beg;
-		} else return 0;
+		fin.close();
+		// ++++++++++++++++++++++++++++++++++++++++++
+
+		system("cls");
+
+		// выводим название раздела
+		SetColor(7, 5);
+		gotoxy(width / 2 - 12, 3);
+		cout << sets(36);
+		gotoxy(width / 2 - 12, 4);
+		cout << "             ВЫБОР ФАЙЛА            ";
+		gotoxy(width / 2 - 12, 5);
+		cout << "  выберите откуда считывать данные  ";
+		gotoxy(width / 2 - 12, 6);
+		cout << sets(36);
+
+		size_t pos = 0;
+		int main_bd = menu(current, arr_filename, k);
+
+		// если нажали delete
+		if (main_bd <= -2) {
+			exit_fl = 1;
+			if (MessageBox(0, L"Вы уверены, что хотите удалить?", L"Удаление", MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == 6) {
+				ofstream file_All_bd(All_bd);
+				main_bd = abs(main_bd);
+
+				if (main_bd == k - 1) current--; // если удаляется последний элемент
+
+				remove(arr_filename[main_bd - 1].c_str());
+
+				// удаляем элемент из массива
+				for (int i = 1; i < k; i++) {
+					if (i == main_bd - 1) {
+						for (int j = i; j < k - 1; j++) arr_filename[j] = arr_filename[j + 1];
+						k--;
+						break;
+					}
+				}
+
+				// запись новых данных в файл
+				for (int i = 1; i < k - 1; i++) {
+					file_All_bd << arr_filename[i] << endl;
+				}
+
+				file_All_bd.close();
+			}
+		} else if (main_bd == -1) { // если нажали esc
+			exit(0);
+		}
+		else {
+			filename = arr_filename[main_bd - 1];
+
+			if (main_bd - 1 != 0) {
+				pos = filename.find(".txt", filename.length() - 4); // ищем .txt в названии файла, если вернёт -1, то это бинарный
+
+				if (pos != -1) {
+					read_file(filename, beg, end);
+				}
+				else {
+					read_bin_file(filename, beg, end);
+				}
+
+				// считаем сумму общего времени и сумму времени ЦП
+				sum_all_time = sum_time_cpu = average_percent_time_cpu = 0;
+				for (time_task* temp = *beg; temp; temp = temp->next) {
+					sum_all_time += stoi(temp->d.all_time);
+					sum_time_cpu += stoi(temp->d.time_cpu);
+					average_percent_time_cpu += percent_time_cpu(stof(temp->d.all_time), stof(temp->d.time_cpu));
+				}
+
+				return *beg;
+			}
+			else return 0;
+		}
+
+		if (exit_fl == 0) return 0;
 	}
 }
 
@@ -463,7 +533,7 @@ void print_info(const time_task & t, int active) {
 		cout << setw(6 + t.d.time_cpu.length());
 	}
 	else {
-		cout << t.d.all_time << sets(17 - t.d.time_cpu.length());
+		cout << t.d.all_time << sets(17 - t.d.all_time.length());
 	}
 
 	if (active == 5) {
@@ -508,6 +578,8 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 
 		cls();
 
+		show_filename(width - filename.length() - 9, 0);
+
 		// если пустой список
 		if (!beg) {
 			MessageBox(0, L"Список пуст", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
@@ -546,16 +618,45 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 					SetColor(7, 5);
 				}
 				cout << sort_items[i - 1];
-				if (i == direction && fl == 1) {
-					cout << "<";
-					fl = 0;
-				} else 
-				if (i == direction) {
-					fl = 1;
-					cout << ">";
-				} else 
-				
-				cout << "    ";
+
+				if (i == sort_field) {
+					if (direction == 0) {
+						cout << "<";
+						fl = 0;
+					}
+					else {
+						fl = 1;
+						cout << ">";
+					}
+
+					switch (i) {
+					case 1:
+					case 2:
+					case 4:
+						cout << sets(4);
+						break;
+					case 3:
+						cout << sets(13);
+						break;
+					case 5: // если это последний пункт
+						cout << "|"; 
+						break;
+					}
+				} else {
+					switch (i) {
+					case 1:
+					case 2:
+					case 4:
+						cout << sets(5);
+						break;
+					case 3:
+						cout << sets(14);
+						break;
+					case 5: // если это последний пункт
+						cout << " |"; 
+						break;
+					}
+				}
 				SetColor(7, 0);
 			}
 		} else {
@@ -606,6 +707,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 
 		cout << "Сумма общего времени: " << sum_all_time << endl;
 		cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
+		cout << "Средний процент времени ЦП: " << average_percent_time_cpu / total_el << endl;
 		cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl << endl;
 		cout << setw(csbi.dwSize.X / 2.5) << "Страница " << page + 1 << " из " << setprecision(0) << total_pages;
 		// +++++++++++++++++
@@ -651,18 +753,19 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			break;
 		case right_btn:
 			if (active == -1 || total_el == 1) break;
+			if (i <= total_el && active != 0) {
+				buf_el = temp->next;
+				count_num_pages += num_pages;
+				active = i + 1;
+				page++;
+				system("cls");
+			}
+
 			if (active % num_pages == 0) {
 				if (sort_field < 5) {
 					sort_field++;
 				}
 				break;
-			}
-			if (active + num_pages <= total_el) {
-				buf_el = temp->next;
-				count_num_pages += num_pages;
-				active += num_pages;
-				page++;
-				system("cls");
 			}
 			break;
 		case left_btn:
@@ -676,7 +779,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			if (active - num_pages >= 1) {
 				buf_el = first_buf_el;
 				count_num_pages -= num_pages;
-				active -= num_pages;
+				active = first_i - num_pages;
 				page--;
 				system("cls");
 			}
@@ -695,10 +798,11 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				} else if (active < num_pages) buf_el = beg;
 
 				// пересчитываем сумму общего времени и сумму времени ЦП
-				sum_all_time = sum_time_cpu = 0;
+				sum_all_time = sum_time_cpu = average_percent_time_cpu = 0;
 				for (temp = beg; temp; temp = temp->next) {
 					sum_all_time += stoi(temp->d.all_time);
 					sum_time_cpu += stoi(temp->d.time_cpu);
+					average_percent_time_cpu += percent_time_cpu(stof(temp->d.all_time), stof(temp->d.time_cpu));
 				}
 			}
 			system("cls");
@@ -802,48 +906,75 @@ void edit(time_task* end, time_task* real_beg ,time_task * beg, int active, time
 			return;
 			break;
 		case enter:
-			cout << "\nВведите новые данные:" << endl;
+			//cout << "\nВведите новые данные:" << endl;
 			switch (edit_el) {
 			case 1:
-				cin >> _edit_ob->d.cipher;
+				cout << "\nВведите новый шифр задания (8 символов):" << endl;
+				_edit_ob->d.cipher = check_num(_edit_ob->d.cipher, 25, 8);
 				break;
 			case 2:
-				cin >> _edit_ob->d.department_code;
+				cout << "\nВведите новый код отдела (3 символа):" << endl;
+				_edit_ob->d.department_code = check_num(_edit_ob->d.department_code, 25, 3);
 				break;
 			case 3:
-				cin >> _edit_ob->d.fio;
+				cout << "\nВведите ФИО (15 символов):" << endl;
+				do {
+					int fl = 0;
+					getline(cin, _edit_ob->d.fio);
+
+					if (_edit_ob->d.fio.length() > 15) {
+						MessageBox(0, L"Слишком много символов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+						clearRow(25);
+						gotoxy(0, 24);
+						fl = 1;
+					}
+
+					// проверка на число
+					for (int i = 0; i < _edit_ob->d.fio.length(); i++) {
+						if (_edit_ob->d.fio[i] >= '0' && _edit_ob->d.fio[i] <= '9') {
+							MessageBox(0, L"В фамилии нельзя вводить цифры!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+							clearRow(25);
+							gotoxy(0, 24);
+							fl = 1;
+							break;
+						}
+					}
+
+					if (fl == 0) break;
+				} while (1);
 				break;
 			case 4:
+				cout << "\nВведите новое общее время (5 символов):" << endl;
 				do {
-					cin >> _edit_ob->d.all_time;
+					_edit_ob->d.all_time = check_num(_edit_ob->d.all_time, 25, 5);
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
-						system("cls");
-						print(end, real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
 						MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Ошибка", MB_ICONWARNING | MB_SETFOREGROUND);
-						cout << "\nВведите заново: " << endl;
+						clearRow(25);
+						gotoxy(0, 24);
 					} else break;
 				} while (1);
 				break;
 			case 5:
+				cout << "\nВведите новое время ЦП (5 символов):" << endl;
 				do {
-					cin >> _edit_ob->d.time_cpu;
+					_edit_ob->d.time_cpu = check_num(_edit_ob->d.time_cpu, 25, 5);
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
-						system("cls");
-						print(end, real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
 						MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Ошибка", MB_ICONWARNING | MB_SETFOREGROUND);
-						cout << "\nВведите заново: " << endl;
+						clearRow(25);
+						gotoxy(0, 24);
 					} else break;
 				} while (1);
 				break;
 			}
 
 			// пересчитываем сумму общего времени и сумму времени ЦП
-			sum_all_time = sum_time_cpu = 0;
+			sum_all_time = sum_time_cpu = average_percent_time_cpu = 0;
 			for (time_task* temp = real_beg; temp; temp = temp->next) {
 				sum_all_time += stoi(temp->d.all_time);
 				sum_time_cpu += stoi(temp->d.time_cpu);
+				average_percent_time_cpu += percent_time_cpu(stof(temp->d.all_time), stof(temp->d.time_cpu));
 			}
 
 			system("cls");
@@ -947,8 +1078,6 @@ void find(time_task * beg) {
 	string find_el;
 	bool fl = 0;
 
-	system("cls");
-
 	if (!beg) {
 		MessageBox(0, L"Список пуст", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
 		return;
@@ -1035,15 +1164,18 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 int write_file(time_task * temp) {
 
 	// МЕНЮ ДЛЯ ЗАПИСИ В ФАЙЛ
-	int active_file = 1;
-	system("cls");
+	int active_file = 1,
+		k = 1,
+		filename_exist = 0;
+
+	string write_filename;
 
 	// выводим название раздела
 	SetColor(7, 5);
 	gotoxy(width / 2 - 16, 3);
 	cout << sets(41);
 	gotoxy(width / 2 - 16, 4);
-	cout << "            ВЫБОР ТИПА ФАЙЛА             ";
+	cout << "          ЗАПИСЬ ДАННЫХ В ФАЙЛ           ";
 	gotoxy(width / 2 - 16, 5);
 	cout << "    Выберите тип файла для сохранения.   ";
 	gotoxy(width / 2 - 16, 6);
@@ -1060,7 +1192,30 @@ int write_file(time_task * temp) {
 	// ======================
 
 	cout << "Введите название файла:" << endl;
-	cin >> filename;
+	do {
+		try {
+			cin >> write_filename;
+
+			for (int i = 0; write_filename[i]; i++) write_filename[i] = tolower(write_filename[i]); // приводим к нижнему регистру для правильного сравнения
+			if (write_filename == "mainbd") throw 1;
+
+			// проверка на повторение названия файла
+			for (k; k < SIZE_arr_filename; k++) {
+				if (write_filename == arr_filename[k].substr( 0, arr_filename[k].length() - 4) ) {
+					filename_exist = 1;
+				}
+				if (arr_filename[k] == "") break; // если дальше пустые элементы
+			}
+			break;
+
+		} catch (int ex) { // если такое название уже есть
+			if (ex == 1) {
+				MessageBox(0, L"Недопустимое название файла!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+			}
+			clearRow(18);
+			gotoxy(0, 17);
+		}
+	} while (1);
 
 	ofstream fout; // файл в который производится запись данных
 	ofstream fout_all_bd("mainBD.txt", ios_base::app); // файл в который производится запись названия файла
@@ -1073,15 +1228,15 @@ int write_file(time_task * temp) {
 
 	// определяем тип файла
 	if (is_text == 1) {
-		fout.open(filename + ".txt");
-		fout_all_bd << filename + ".txt" << endl; // запись в общий файл названия БД
+		fout.open(write_filename + ".txt");
+		if (filename_exist == 0) fout_all_bd << write_filename + ".txt" << endl; // если файла с таким именем нет, то записываем в общий файл названия БД
 	} else {
-		fout.open(filename + ".bin", ios::binary | ios::out);
-		fout_all_bd << filename + ".bin" << endl; // запись в общий файл названия БД
+		fout.open(write_filename + ".bin", ios::binary | ios::out);
+		if (filename_exist == 0) fout_all_bd << write_filename + ".bin" << endl; // если файла с таким именем нет, то записываем в общий файл названия БД
 	}
+
+	arr_filename[k++] = write_filename + (is_text == 1 ? ".txt" : ".bin"); // добавялем в массив новое название файла
 	
-
-
 	if (is_text == 1) {
 		while (temp) {
 			fout << temp->d.cipher << endl;
@@ -1091,14 +1246,14 @@ int write_file(time_task * temp) {
 			fout << temp->d.time_cpu << endl;
 			temp = temp->next;
 		}
-
-		MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
 	} else {
 		while (temp) {
 			fout.write((char*)& temp->d, sizeof temp->d);
 			temp = temp->next;
 		}
 	}
+	
+	MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
 	return 0;
 }
 
@@ -1136,6 +1291,8 @@ int menu(int& active, const string items[], int num_el) {
 			return active;
 		case esc: // клавиша escape
 			return -1;
+		case del:
+			return -active;
 		}
 	} while (1);
 }
