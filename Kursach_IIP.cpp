@@ -40,13 +40,14 @@ del = 83;
 const int SIZE_arr_filename = 50;
 
 // названия пунктов
-const string items[6] = {
-	"   Ввод данных            ",
-	"   Печать данных          ",
-	"   Запись данных в файл   ",
-	"   Поиск                  ",
-	"   Выбрать другой файл    ",
-	"   Выход из программы     " };
+const string items[7] = {
+	"   Ввод данных               ",
+	"   Печать данных             ",
+	"   Сохранить данные          ",
+	"   Сохранить в другой файл   ",
+	"   Поиск                     ",
+	"   Выбрать другой файл       ",
+	"   Выход из программы        " };
 
 // названия для сортировки 
 const string sort_items[5] = {
@@ -95,6 +96,7 @@ time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
 int read_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
 int read_bin_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ БИНАРНОГО ФАЙЛА
 int write_file(time_task* temp); // ЗАПИСЬ В ФАЙЛ
+void write_filetype(time_task* temp, string filename, int el, int filetype); // ОПРЕДЕЛЕНИЕ ТИПА ДЛЯ ЗАПИСИ
 int menu(int& active, const string items[], int num_el); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
 void find(time_task* beg); // поиск
@@ -108,12 +110,10 @@ string sets(size_t size); // АНАЛОГ setw()
 float percent_time_cpu(float a, float b); // РАСЧЁТ ПРОЦЕНТА ПРОЦЕССОРНОГО ВРЕМЕНИ
 void show_filename(int posX, int posY); // ПОКАЗЫВАЕМ КАКОЙ РЕДАКТИРУЕТСЯ ФАЙЛ
 
-
 //===================
 // ОСНОВНАЯ ПРОГРАММА
 //===================
 int main() {
-
 	//========================
 	//========================
 	//========================
@@ -165,7 +165,7 @@ int main() {
 		gotoxy(width / 2 + 1, 5);
 		cout << "            ";
 
-		switch (menu(current, items, 7)) {
+		switch (menu(current, items, 8)) {
 		// Добавление элемента в список
 		case 1:
 			system("cls");
@@ -186,26 +186,33 @@ int main() {
 		case 3:
 			system("cls");
 			show_filename(width - filename.length() - 9, 0);
+			write_filetype(beg, filename, -1, filename[filename.length() - 3] == 't' ? 1 : 0);
+			break;
+
+			// Запись в другой файл
+		case 4:
+			system("cls");
+			show_filename(width - filename.length() - 9, 0);
 			write_file(beg);
 			break;
 
 			// Поиск элемента
-		case 4:
+		case 5:
 			system("cls");
 			show_filename(width - filename.length() - 9, 0);
 			find(beg);
 			break;
 
 			// выбор другого файла
-		case 5:
+		case 6:
 			if (beg) {
 				if (MessageBox(0, L"Хотите сохранить данные?", L"Сохранение", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
-					write_file(beg);
+					write_filetype(beg, filename, -1, filename[filename.length() - 3] == 't' ? 1 : 0);
 				}
 			}
 			beg = end = first_start(&beg, &end);
 			break;
-		case 6:
+		case 7:
 		case -1:
 			if (MessageBox(0, L"Вы уверены, что хотите выйти?", L"Уведомление", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
 				return 0;
@@ -240,7 +247,6 @@ time_task* first_start(time_task** beg, time_task** end) {
 		k = 1;
 
 		int exit_fl = 0;
-		//system("cls");
 		// +++++++ОТКРЫВАЕМ ФАЙЛ СО ВСЕМИ БД+++++++
 		ifstream fin;
 		fin.open(All_bd);
@@ -261,6 +267,14 @@ time_task* first_start(time_task** beg, time_task** end) {
 		// ++++++++++++++++++++++++++++++++++++++++++
 
 		system("cls");
+
+		gotoxy(0, 3);
+		SetColor(7, 8);
+		cout << "     ГОРЯЧИЕ КЛАВИШИ     " << endl;
+		SetColor(7, 0);
+		cout << "del - удалить файл" << endl;
+		cout << "enter - выбрать файл" << endl;
+		cout << "esc - выйти из программы" << endl;
 
 		// выводим название раздела
 		SetColor(7, 5);
@@ -568,16 +582,13 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		sort_field		= 1, // поле для сортировки
 		remember_active = 0, // запоминающая переменная для active
 		direction		= 0, // направление сортировки (0 - от меньшего к большему, 1 - наоборот)
-		fl				= 0;
-
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
-	int ret = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+		fl				= 0,
+		show_hotkey		= 0; // видимость горячих клавиш
 
 	do {
 		float total_pages = ceil(total_el / num_pages); // общее кол-во страниц
 
 		cls();
-
 		show_filename(width - filename.length() - 9, 0);
 
 		// если пустой список
@@ -600,7 +611,8 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			temp = beg;
 			edit_ob = beg;
 		}
-
+		
+		gotoxy(0, 0);
 		cout << "\nОбщее количесвто элементов: " << total_el << setw(20) << endl;
 		cout << "Количество элементов на странице: ";
 
@@ -681,9 +693,6 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				np = 0;
 			}
 
-			/*cout << "i = " << i;
-			cout << "active = " << active;*/
-
 			// разукрашивание выбранного элемента
 			if (i == active) {
 				SetColor(7, 5);
@@ -709,10 +718,26 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		cout << "Сумма времени ЦП: " << sum_time_cpu << endl;
 		cout << "Средний процент времени ЦП: " << average_percent_time_cpu / total_el << endl;
 		cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl << endl;
-		cout << setw(csbi.dwSize.X / 2.5) << "Страница " << page + 1 << " из " << setprecision(0) << total_pages;
+		cout << setw(width / 2) << "Страница " << page + 1 << " из " << setprecision(0) << total_pages;
 		// +++++++++++++++++
 
+		// горячие клавиши
+		gotoxy(0, 0);
+		SetColor(7, 8);
+		if (show_hotkey == 0) {
+			cout << "     Нажмите клавишу H     " << endl;
+		}
+		else {
+			cout << "              ГОРЯЧИЕ КЛАВИШИ              " << endl;
+			cout << " del - удалить файл                        " << endl;
+			cout << " enter - редактировать поле                " << endl;
+			cout << " s - сортировка                            " << endl;
+			cout << " n - изменить кол-во элементов на странице " << endl;
+			cout << " esc - выйти в меню                        " << endl;
+		}
+		SetColor(7, 0);
 		
+
 		if (edit_el) {
 			return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
 		} 
@@ -753,7 +778,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			break;
 		case right_btn:
 			if (active == -1 || total_el == 1) break;
-			if (i <= total_el && active != 0) {
+			if (i + 1 <= total_el && active != 0) {
 				buf_el = temp->next;
 				count_num_pages += num_pages;
 				active = i + 1;
@@ -866,7 +891,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			break;
 		case 115: // символ s
 		case 1099: // символ ы
-			if (active == -1) break;
+			if (active == -1 || show_hotkey == 1) break;
 			if (active == 0) {
 				active = remember_active;
 			} else {
@@ -876,6 +901,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			break;
 		case 110: // символ n
 		case 1090: // символ т
+			if (show_hotkey == 1) break;
 			if (active == -1) {
 				active = remember_active;
 			}
@@ -883,6 +909,13 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				remember_active = active;
 				active = -1;
 			}
+			break;
+		case 104: // символ h
+		case 1088: // символ р
+			if (show_hotkey == 0) {
+				show_hotkey = 1;
+			} else  show_hotkey = 0;
+			system("cls");
 			break;
 		}
 	} while (1);
@@ -906,7 +939,6 @@ void edit(time_task* end, time_task* real_beg ,time_task * beg, int active, time
 			return;
 			break;
 		case enter:
-			//cout << "\nВведите новые данные:" << endl;
 			switch (edit_el) {
 			case 1:
 				cout << "\nВведите новый шифр задания (8 символов):" << endl;
@@ -1024,7 +1056,7 @@ time_task* delete_el(time_task * beg, int num_del) {
 		temp = temp->next;
 	}
 
-	cout << "\nТакого шифра не существует!";
+	MessageBox(0, L"Произошла ошибка!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
 	return beg;
 }
 
@@ -1083,8 +1115,28 @@ void find(time_task * beg) {
 		return;
 	}
 
+	// выводим название раздела
+	SetColor(7, 5);
+	gotoxy(width / 2 - 2, 3);
+	cout << sets(21);
+	gotoxy(width / 2 - 2, 4);
+	cout << "        ПОИСК        ";
+	gotoxy(width / 2 - 2, 5);
+	cout << sets(21);
+	SetColor(7, 0);
+
+	gotoxy(width / 2 - 4, height / 2 - 4);
 	cout << "Введите данные для поиска" << endl;
+	gotoxy(width / 2 - 4, height / 2 - 3);
+	cout << "Введите * для выхода     ";
+	gotoxy(width / 2 - 4, height / 2 - 2);
+	SetColor(7, 5);
+	cout << "                         ";
+	gotoxy(width / 2 - 4, height / 2 - 2);
 	cin >> find_el;
+	SetColor(7, 0);
+
+	if (find_el == "*") return; // выходим, если ввели *
 	system("cls");
 
 	cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
@@ -1102,6 +1154,7 @@ void find(time_task * beg) {
 
 	if (fl == 0) {
 		MessageBox(0, L"Сотрудник с такими данными не найден", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
+		return;
 	} else system("pause");
 }
 
@@ -1157,6 +1210,7 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 		total_el++;
 	}
 
+	fin.close();
 	return 0;
 }
 
@@ -1165,8 +1219,7 @@ int write_file(time_task * temp) {
 
 	// МЕНЮ ДЛЯ ЗАПИСИ В ФАЙЛ
 	int active_file = 1,
-		k = 1,
-		filename_exist = 0;
+		k = 1;
 
 	string write_filename;
 
@@ -1202,7 +1255,7 @@ int write_file(time_task * temp) {
 			// проверка на повторение названия файла
 			for (k; k < SIZE_arr_filename; k++) {
 				if (write_filename == arr_filename[k].substr( 0, arr_filename[k].length() - 4) ) {
-					filename_exist = 1;
+					throw 2;
 				}
 				if (arr_filename[k] == "") break; // если дальше пустые элементы
 			}
@@ -1212,32 +1265,38 @@ int write_file(time_task * temp) {
 			if (ex == 1) {
 				MessageBox(0, L"Недопустимое название файла!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
 			}
+			else if (ex == 2) {
+				MessageBox(0, L"Файл с таким именем уже существует!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+			}
 			clearRow(18);
 			gotoxy(0, 17);
 		}
 	} while (1);
 
+	if (is_text == 1) {
+		write_filetype(temp, write_filename + ".txt", k, 1);
+	} else write_filetype(temp, write_filename + ".bin", k, 0);
+	return 0;
+}
+
+// ==========ОПРЕДЕЛЕНИЕ ТИПА ДЛЯ ЗАПИСИ==========
+void write_filetype(time_task *temp, string filename, int el, int filetype) {
 	ofstream fout; // файл в который производится запись данных
-	ofstream fout_all_bd("mainBD.txt", ios_base::app); // файл в который производится запись названия файла
+	ofstream fout_all_bd; // файл в который производится запись названия файла
+	if (el != -1) fout_all_bd.open("mainBD.txt", ios_base::app);
 
 	// обработка ошибок
 	if (!fout || !fout_all_bd) {
 		MessageBox(0, L"Невозможно открыть файл для записи!", L"Ошибка", MB_ICONERROR | MB_SETFOREGROUND);
-		return 1;
+		return;
 	}
 
-	// определяем тип файла
-	if (is_text == 1) {
-		fout.open(write_filename + ".txt");
-		if (filename_exist == 0) fout_all_bd << write_filename + ".txt" << endl; // если файла с таким именем нет, то записываем в общий файл названия БД
-	} else {
-		fout.open(write_filename + ".bin", ios::binary | ios::out);
-		if (filename_exist == 0) fout_all_bd << write_filename + ".bin" << endl; // если файла с таким именем нет, то записываем в общий файл названия БД
-	}
+	fout.open(filename, (filetype == 1) ? ios_base::out : ios::binary | ios::out);
+	if (el != -1) fout_all_bd << filename << endl; // записываем в общий файл названия БД
 
-	arr_filename[k++] = write_filename + (is_text == 1 ? ".txt" : ".bin"); // добавялем в массив новое название файла
-	
-	if (is_text == 1) {
+	if (el != -1) arr_filename[el++] = filename; // добавялем в массив новое название файла
+
+	if (filetype == 1) {
 		while (temp) {
 			fout << temp->d.cipher << endl;
 			fout << temp->d.department_code << endl;
@@ -1252,11 +1311,13 @@ int write_file(time_task * temp) {
 			temp = temp->next;
 		}
 	}
-	
-	MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
-	return 0;
-}
 
+	// закрываем файлы
+	fout.close();
+	fout_all_bd.close();
+
+	MessageBox(0, L"БД Сохранена", L"Сохранение", MB_ICONINFORMATION | MB_SETFOREGROUND);
+}
 
 // ==========ШАБЛОН ПЕЧАТИ МЕНЮ==========
 void print_menu(int sym, const string items[], const int N_ITEMS) {

@@ -1,4 +1,2 @@
 person.txt
 36436.bin
-person1.txt
-2.txt
