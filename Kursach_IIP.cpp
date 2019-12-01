@@ -23,8 +23,6 @@ int num_pages	 = 5, // Кол-во элементов на одной стран
 	sum_time_cpu = 0, // Сумма времени ЦП
 	average_percent_time_cpu = 0; // Средний процент процессорного времени
 
-
-
 //===================
 // КОНСТАНТЫ
 //===================
@@ -99,16 +97,18 @@ int write_file(time_task* temp); // ЗАПИСЬ В ФАЙЛ
 void write_filetype(time_task* temp, string filename, int el, int filetype); // ОПРЕДЕЛЕНИЕ ТИПА ДЛЯ ЗАПИСИ
 int menu(int& active, const string items[], int num_el); // МЕНЮ
 void SetColor(int text, int bg); // установка цвета текста и фона 
-void find(time_task* beg); // поиск
-void edit(time_task* end, time_task* real_beg, time_task* beg, int active, time_task* _edit_ob, int edit_count_num_pages, int edit_page); // редактирование элемента
-void cls(); // очистка экрана без мерцания 
-void sort(time_task* beg, int field_for_sort, int sort_direction); // сортировка
-int compare(time_task* t_i, time_task* t_j, int num, int compare_direction); // сравнение данных для сортировки
+void find(time_task* beg); // ПОИСК
+void edit(time_task* end, time_task* real_beg, time_task* beg, int active, time_task* _edit_ob, int edit_count_num_pages, int edit_page, int edit_i); // РЕДАКТИРОВАНИЕ ЭЛЕМЕНТА
+void cls(); // ОЧИСТКА ЭКРАНА БЕЗ МЕРЦАНИЯ
+void sort(time_task* beg, int field_for_sort, int sort_direction); // СОРТИРОВКА
+int compare(time_task* t_i, time_task* t_j, int num, int compare_direction); // СРАВНЕНИЕ ДАННЫХ ДЛЯ СОРТИРОВКИ
 void gotoxy(int xpos, int ypos); // ПЕРЕМЕЩЕНИЕ КУРСОРА НА ВЫБРАННУЮ ПОЗИЦИЮ
 time_task* first_start(time_task** beg, time_task** end); // ВЫБОР БД
 string sets(size_t size); // АНАЛОГ setw()
 float percent_time_cpu(float a, float b); // РАСЧЁТ ПРОЦЕНТА ПРОЦЕССОРНОГО ВРЕМЕНИ
-void show_filename(int posX, int posY); // ПОКАЗЫВАЕМ КАКОЙ РЕДАКТИРУЕТСЯ ФАЙЛ
+void show_filename(size_t posX, size_t posY); // ПОКАЗЫВАЕМ КАКОЙ РЕДАКТИРУЕТСЯ ФАЙЛ
+void show_cursor(bool show); // ВИДИМОСТЬ КУРСОРА
+string check_num(string field, int posX, int posY, int max_length, int is_text); // ПРОВЕРКИ НА СИМВОЛ И ДЛИНУ СТРОКИ
 
 //===================
 // ОСНОВНАЯ ПРОГРАММА
@@ -143,7 +143,7 @@ int main() {
 
 	SetColor(7, 0); // устанавливаем цвет текста и заднего фона чёрным
 	ShowWindow(GetConsoleWindow(), SW_MAXIMIZE); // полноэкранный режим
-
+	show_cursor(FALSE); // убираем курсор
 	int item = 0,
 		current = 1;
 	time_task* beg = 0,
@@ -152,6 +152,7 @@ int main() {
 	first_start(&beg, &end);
 
 	while (1) {
+		show_cursor(FALSE); // убираем курсор
 		system("cls");
 
 		show_filename(width - filename.length() - 9, 0);
@@ -165,7 +166,7 @@ int main() {
 		gotoxy(width / 2 + 1, 5);
 		cout << "            ";
 
-		switch (menu(current, items, 8)) {
+		switch (menu(current, items, 7)) {
 		// Добавление элемента в список
 		case 1:
 			system("cls");
@@ -226,13 +227,22 @@ int main() {
 //===================
 
 // =========ПОКАЗЫВАЕМ КАКОЙ РЕДАКТИРУЕТСЯ ФАЙЛ=========
-void show_filename(int posX, int posY) {
+void show_filename(size_t posX, size_t posY) {
 	gotoxy(posX, posY);
 	cout << "Редактируемый файл: ";
 	SetColor(7, 8);
 	cout << " " << filename << " ";
 	SetColor(7, 0);
 	gotoxy(0, 0);
+}
+
+// =========ВИДИМОСТЬ КУРСОРА=========
+void show_cursor(bool show) {
+	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_CURSOR_INFO structCursorInfo;
+	GetConsoleCursorInfo(handle, &structCursorInfo);
+	structCursorInfo.bVisible = show;
+	SetConsoleCursorInfo(handle, &structCursorInfo);
 }
 
 // ==========ВЫБОР БД (первый запуск)==========
@@ -288,7 +298,7 @@ time_task* first_start(time_task** beg, time_task** end) {
 		cout << sets(36);
 
 		size_t pos = 0;
-		int main_bd = menu(current, arr_filename, k);
+		int main_bd = menu(current, arr_filename, k - 1);
 
 		// если нажали delete
 		if (main_bd <= -2) {
@@ -318,7 +328,9 @@ time_task* first_start(time_task** beg, time_task** end) {
 				file_All_bd.close();
 			}
 		} else if (main_bd == -1) { // если нажали esc
-			exit(0);
+			if (MessageBox(0, L"Вы уверены, что хотите выйти?", L"Уведомление", MB_ICONQUESTION | MB_SETFOREGROUND | MB_YESNO) == 6) {
+				exit(0);
+			} else exit_fl = 1;
 		}
 		else {
 			filename = arr_filename[main_bd - 1];
@@ -363,15 +375,16 @@ void gotoxy(int xpos, int ypos)
 void clearRow(int row)
 {
 	DWORD a;
-	HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); // получаем хэндл окна консоли
+	HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE); // получаем хэндл окна консоли*/
 	COORD coord = { 0, row - 1 }; // получаем координаты строки для очистки 
 	CONSOLE_SCREEN_BUFFER_INFO csbi; 
 	GetConsoleScreenBufferInfo(hStdOut, &csbi); // получаем данные из буфера вывода консоли
-	FillConsoleOutputCharacter(hStdOut, ' ', 80, coord, &a); // заполняем строку пробелами
+	FillConsoleOutputCharacter(hStdOut, ' ', width, coord, &a); // заполняем строку пробелами
 }
 
 // ==========ВЫДЕЛЕНИЕ ПАМЯТИ==========
 void input(time_task*& beg, time_task*& end, const time_task& info) {
+	if (info.d.cipher == "-1" || info.d.all_time == "-1" || info.d.department_code == "-1" || info.d.fio == "-1" || info.d.time_cpu == "-1") return;
 	time_task* newel = new time_task;
 	newel->next = NULL;
 	newel->prev = NULL;
@@ -383,37 +396,46 @@ void input(time_task*& beg, time_task*& end, const time_task& info) {
 		end->next = newel;
 		newel->prev = end;
 		end = newel;
+		num_pages = 5;
 	}
 }
 
 // ==========ПРОВЕРКИ НА СИМВОЛ И ДЛИНУ СТРОКИ==========
-string check_num(string field, int row, int max_length) {
-	do {
-		int fl = 0;
-		getline(cin, field);
+string check_num(string field, int posX, int posY, int max_length, int is_text) {
+	int length = 0;
+	int pospos = 0;
+	field = "";
+	int* posarrays = new int[(__int64)max_length + 1];
+	for (int i = 0; i < max_length; i++) {
+		posarrays[i] = i;
+		if(max_length != i) field += "_"; // создаём маску
+	}
+	int pos = posarrays[pospos];
+	cout << field;
+	while (true) {
+		int ch = _getch();
+		if (ch == enter && length >= 1) break; // выходим, если заполнили всю маску и нажали enter
+		if (ch == esc) return "-1";
 
-		if (field.length() > max_length) {
-			MessageBox(0, L"Слишком много символов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-			clearRow(row);
-			gotoxy(0, row - 1);
-			fl = 1;
+		if (ch == 8 && length >= 1) { // если нажали backspace
+			length--;
+			gotoxy(posX, posY);
+			pospos--;
+			pos = posarrays[pospos];
+			field[pos] = '_';
+			cout << field;
+		} else if ( length != max_length && ch != esc && ch != enter && ch != 8 && (is_text == 1 ? !(ch >= '0' && ch <= '9') : (ch >= '0' && ch <= '9')) ) {
+			length++;
+			field[pos] = ch;
+			gotoxy(posX, posY);
+			pospos++;
+			pos = posarrays[pospos];
+			cout << field;
 		}
+	}
 
-		// проверка на символ
-		for (int i = 0; i < field.length(); i++) {
-			if ( !(field[i] >= '0' && field[i] <= '9') ) {
-				MessageBox(0, L"Нельзя вводить символы!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-				clearRow(row);
-				gotoxy(0, row - 1);
-				fl = 1;
-				break;
-			}
-		}
-
-		if (fl == 0) break;
-	} while (1);
-
-	return field;
+	delete[] posarrays;
+	return field.substr(0, length);
 }
 
 // ==========ВВОД ДАННЫХ==========
@@ -422,57 +444,59 @@ time_task input_info(time_task * beg) {
 	time_task* temp = beg;
 	int fl = 0;
 
+	// выводим название раздела
+	SetColor(7, 5);
+	gotoxy(width / 2 + 1, 3);
+	cout << "                   ";
+	gotoxy(width / 2 + 1, 4);
+	cout << "    ВВОД ДАННЫХ    ";
+	gotoxy(width / 2 + 1, 5);
+	cout << "                   ";
+	SetColor(7, 0);
+
+	gotoxy(width / 2 - 6, 8);
 	cout << "Введите шифр задания (8 символов)" << endl;
-	t.d.cipher = check_num(t.d.cipher, 2, 8);
+	gotoxy(width / 2 - 6, 9);
+	t.d.cipher = check_num(t.d.cipher, width / 2 - 6,  9, 8, 0);
+	if (t.d.cipher == "-1") return t;
+
+	gotoxy(width / 2 - 6, 10);
 	cout << "Введите код отдела (3 символа)" << endl;
-	t.d.department_code = check_num(t.d.department_code, 4, 3);
+	gotoxy(width / 2 - 6, 11);
+	t.d.department_code = check_num(t.d.department_code, width / 2 - 6, 11, 3, 0);
+	if (t.d.department_code == "-1") return t;
 
+	gotoxy(width / 2 - 6, 12);
 	cout << "Введите ФИО (15 символов)" << endl;
-	do {
-		int fl = 0;
-		getline(cin, t.d.fio);
-
-		if (t.d.fio.length() > 15) {
-			MessageBox(0, L"Слишком много символов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-			clearRow(6);
-			gotoxy(0, 5);
-			fl = 1;
-		}
-
-		// проверка на число
-		for (int i = 0; i < t.d.fio.length(); i++) {
-			if (t.d.fio[i] >= '0' && t.d.fio[i] <= '9') {
-				MessageBox(0, L"В фамилии нельзя вводить цифры!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-				clearRow(6);
-				gotoxy(0, 5);
-				fl = 1;
-				break;
-			}
-		}
-
-		if (fl == 0) break;
-	} while (1);
+	gotoxy(width / 2 - 6, 13);
+	t.d.fio = check_num(t.d.fio, width / 2 - 6, 13, 15, 1);
+	if(t.d.fio == "-1") return t;
 
 	do {
+		gotoxy(width / 2 - 6, 14);
 		cout << "Введите общее время прохождения задания (5 символов)" << endl;
-		t.d.all_time = check_num(t.d.all_time, 8, 5);
+		gotoxy(width / 2 - 6, 15);
+		t.d.all_time = check_num(t.d.all_time, width / 2 - 6, 15, 5, 0);
+		if (t.d.all_time == "-1") return t;
 
+		gotoxy(width / 2 - 6, 16);
 		cout << "Введите время центрального процессора (5 символов)" << endl;
-		t.d.time_cpu = check_num(t.d.time_cpu, 10, 5);
+		gotoxy(width / 2 - 6, 17);
+		t.d.time_cpu = check_num(t.d.time_cpu, width / 2 - 6, 17, 5, 0);
+		if (t.d.time_cpu == "-1") return t;
 
 		if (stoi(t.d.all_time) < stoi(t.d.time_cpu)) {
 			MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-			clearRow(7);
-			clearRow(8);
-			clearRow(9);
-			clearRow(10);
-			gotoxy(0, 6);
+			clearRow(15);
+			clearRow(16);
+			clearRow(17);
+			clearRow(18);
+			gotoxy(0, 14);
 		}
 		else break;
 
 	} while (1);
 
-	system("pause");
 	total_el++;
 
 	return t;
@@ -584,6 +608,16 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		direction		= 0, // направление сортировки (0 - от меньшего к большему, 1 - наоборот)
 		fl				= 0,
 		show_hotkey		= 0; // видимость горячих клавиш
+
+	// пересчитываем сумму общего времени и сумму времени ЦП
+	if (edit_el == 0) {
+		sum_all_time = sum_time_cpu = average_percent_time_cpu = 0;
+		for (temp = beg; temp; temp = temp->next) {
+			sum_all_time += stoi(temp->d.all_time);
+			sum_time_cpu += stoi(temp->d.time_cpu);
+			average_percent_time_cpu += percent_time_cpu(stof(temp->d.all_time), stof(temp->d.time_cpu));
+		}
+	}
 
 	do {
 		float total_pages = ceil(total_el / num_pages); // общее кол-во страниц
@@ -723,12 +757,12 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 
 		// горячие клавиши
 		gotoxy(0, 0);
-		SetColor(7, 8);
+		SetColor(7, 4);
 		if (show_hotkey == 0) {
-			cout << "     Нажмите клавишу H     " << endl;
+			cout << "    Горячие клавиши (H)    " << endl;
 		}
 		else {
-			cout << "              ГОРЯЧИЕ КЛАВИШИ              " << endl;
+			cout << "         ГОРЯЧИЕ КЛАВИШИ         закрыть(H)" << endl;
 			cout << " del - удалить файл                        " << endl;
 			cout << " enter - редактировать поле                " << endl;
 			cout << " s - сортировка                            " << endl;
@@ -737,25 +771,43 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		}
 		SetColor(7, 0);
 		
+		int height_el_num_pages = 0; // высота элементов
+		if ((page + 1 != total_pages)) {
+			height_el_num_pages = i - count_num_pages;
+		}
+		else {
+			height_el_num_pages = i - count_num_pages - 1;
+		}
 
 		if (edit_el) {
+			gotoxy(0, 14 + height_el_num_pages + (height_el_num_pages + 1));
 			return beg; // если редактируется какой-нибудь элемент, то выходим из ф-ии чтобы не было рекурсии
-		} 
+		} else {
+			show_cursor(FALSE);
+		}
 
 		// считывание клавиш
 		buf = _getwch();
 		switch (buf) {
 		case up:
-				if (active == 0 || active == -1 || total_el == 1) break;
-				if (active > 1) active--;
-				if (active % num_pages == 0 || page == total_pages) {
-					page--;
-					buf_el = first_buf_el;
-					count_num_pages = first_i - num_pages; // формируем i
-					system("cls");
-				}
+			if (show_hotkey == 1) {
+				system("cls");
+				show_hotkey = 0;
+			}
+			if (active == 0 || active == -1 || total_el == 1) break;
+			if (active > 1) active--;
+			if (active % num_pages == 0 || page == total_pages) {
+				page--;
+				buf_el = first_buf_el;
+				count_num_pages = first_i - num_pages; // формируем i
+				system("cls");
+			}
 			break;
 		case down:
+			if (show_hotkey == 1) {
+				system("cls");
+				show_hotkey = 0;
+			}
 			if (active == -1 || total_el == 1) break;
 			if (active != 0) {
 				if (active % (num_pages) == 0) {
@@ -777,6 +829,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			}
 			break;
 		case right_btn:
+			if (show_hotkey == 1) break; // если включен блок горячих клавиш
 			if (active == -1 || total_el == 1) break;
 			if (i + 1 <= total_el && active != 0) {
 				buf_el = temp->next;
@@ -794,6 +847,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			}
 			break;
 		case left_btn:
+			if (show_hotkey == 1) break; // если включен блок горячих клавиш
 			if (active == -1 || total_el == 1) break;
 			if (active == 0) {
 				if (sort_field > 1) {
@@ -810,6 +864,10 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			}
 			break;
 		case del:
+			if (show_hotkey == 1) {
+				system("cls");
+				show_hotkey = 0;
+			}
 			if (MessageBox(0, L"Вы уверены, что хотите удалить?", L"Удаление", MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == 6) {
 				beg = delete_el(beg, num_del);
 				if (active != 1) {
@@ -833,6 +891,11 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			system("cls");
 			break;
 		case esc:
+			if (show_hotkey == 1) {
+				system("cls");
+				show_hotkey = 0;
+				break;
+			}
 			if (active == 0 || active == -1) {
 				active = remember_active;
 				break;
@@ -840,7 +903,9 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				return beg;
 			}
 		case enter:
+			if (show_hotkey == 1) break; // если включен блок горячих клавиш
 			if (active == -1) { // изменение кол-ва элементов на одной странице
+				show_cursor(TRUE);
 				do {
 					string str;
 					int fl = 0;
@@ -879,6 +944,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				temp = buf_el = first_buf_el = beg;
 				active = 1;
 				system("cls");
+				show_cursor(FALSE);
 				break;
 			}
 			if (active == 0) {
@@ -886,12 +952,16 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 				if (direction == 0) direction = sort_field; else direction = 0;
 				break;
 			}
-			edit(end, beg, buf_el, active, edit_ob, count_num_pages, page);
+			edit(end, beg, buf_el, active, edit_ob, count_num_pages, page, height_el_num_pages);
 			system("cls");
 			break;
 		case 115: // символ s
 		case 1099: // символ ы
-			if (active == -1 || show_hotkey == 1) break;
+			if (active == -1) break;
+			if (show_hotkey == 1) { 
+				system("cls");
+				show_hotkey = 0; 
+			}
 			if (active == 0) {
 				active = remember_active;
 			} else {
@@ -901,7 +971,10 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			break;
 		case 110: // символ n
 		case 1090: // символ т
-			if (show_hotkey == 1) break;
+			if (show_hotkey == 1) {
+				system("cls");
+				show_hotkey = 0;
+			}
 			if (active == -1) {
 				active = remember_active;
 			}
@@ -922,8 +995,9 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 }
 
 // ==========РЕДАКТИРОВАНИЕ ЭЛЕМЕНТА==========
-void edit(time_task* end, time_task* real_beg ,time_task * beg, int active, time_task * _edit_ob, int edit_count_num_pages, int edit_page) {
+void edit(time_task* end, time_task* real_beg ,time_task * beg, int active, time_task * _edit_ob, int edit_count_num_pages, int edit_page, int edit_i) {
 	int edit_el = 1;
+	string remember_field;
 
 	do {
 		print(end, real_beg, beg, active, edit_el, edit_count_num_pages, edit_page);
@@ -942,60 +1016,62 @@ void edit(time_task* end, time_task* real_beg ,time_task * beg, int active, time
 			switch (edit_el) {
 			case 1:
 				cout << "\nВведите новый шифр задания (8 символов):" << endl;
-				_edit_ob->d.cipher = check_num(_edit_ob->d.cipher, 25, 8);
+				remember_field = _edit_ob->d.cipher;
+				_edit_ob->d.cipher = check_num(_edit_ob->d.cipher, 0, 17 + edit_i * 2, 8, 0);
+				if (_edit_ob->d.cipher == "-1") {
+					_edit_ob->d.cipher = remember_field;
+					break;
+				} 
 				break;
 			case 2:
 				cout << "\nВведите новый код отдела (3 символа):" << endl;
-				_edit_ob->d.department_code = check_num(_edit_ob->d.department_code, 25, 3);
+				remember_field = _edit_ob->d.department_code;
+				_edit_ob->d.department_code = check_num(_edit_ob->d.department_code, 0, 17 + edit_i * 2, 3, 0);
+				if (_edit_ob->d.department_code == "-1") {
+					_edit_ob->d.department_code = remember_field;
+					break;
+				}
 				break;
 			case 3:
 				cout << "\nВведите ФИО (15 символов):" << endl;
-				do {
-					int fl = 0;
-					getline(cin, _edit_ob->d.fio);
-
-					if (_edit_ob->d.fio.length() > 15) {
-						MessageBox(0, L"Слишком много символов!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-						clearRow(25);
-						gotoxy(0, 24);
-						fl = 1;
-					}
-
-					// проверка на число
-					for (int i = 0; i < _edit_ob->d.fio.length(); i++) {
-						if (_edit_ob->d.fio[i] >= '0' && _edit_ob->d.fio[i] <= '9') {
-							MessageBox(0, L"В фамилии нельзя вводить цифры!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-							clearRow(25);
-							gotoxy(0, 24);
-							fl = 1;
-							break;
-						}
-					}
-
-					if (fl == 0) break;
-				} while (1);
+				remember_field = _edit_ob->d.fio;
+				_edit_ob->d.fio = check_num(_edit_ob->d.fio, 0, 17 + edit_i * 2, 15, 1);
+				if (_edit_ob->d.fio == "-1") {
+					_edit_ob->d.fio = remember_field;
+					break;
+				}
 				break;
 			case 4:
 				cout << "\nВведите новое общее время (5 символов):" << endl;
 				do {
-					_edit_ob->d.all_time = check_num(_edit_ob->d.all_time, 25, 5);
+					remember_field = _edit_ob->d.all_time;
+					_edit_ob->d.all_time = check_num(_edit_ob->d.all_time, 0, 17 + edit_i * 2, 5, 0);
+					if (_edit_ob->d.all_time == "-1") {
+						_edit_ob->d.all_time = remember_field;
+						break;
+					}
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
 						MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Ошибка", MB_ICONWARNING | MB_SETFOREGROUND);
-						clearRow(25);
-						gotoxy(0, 24);
+						clearRow(16 + edit_i * 2);
+						gotoxy(0, 17 + edit_i * 2);
 					} else break;
 				} while (1);
 				break;
 			case 5:
 				cout << "\nВведите новое время ЦП (5 символов):" << endl;
 				do {
-					_edit_ob->d.time_cpu = check_num(_edit_ob->d.time_cpu, 25, 5);
+					remember_field = _edit_ob->d.time_cpu;
+					_edit_ob->d.time_cpu = check_num(_edit_ob->d.time_cpu, 0, 17 + edit_i * 2, 5, 0);
+					if (_edit_ob->d.time_cpu == "-1") {
+						_edit_ob->d.time_cpu = remember_field;
+						break;
+					}
 
 					if (stoi(_edit_ob->d.all_time) < stoi(_edit_ob->d.time_cpu)) {
 						MessageBox(0, L"Общее время должно быть больше времени центрального процессора!", L"Ошибка", MB_ICONWARNING | MB_SETFOREGROUND);
-						clearRow(25);
-						gotoxy(0, 24);
+						clearRow(16 + edit_i * 2);
+						gotoxy(0, 17 + edit_i * 2);
 					} else break;
 				} while (1);
 				break;
@@ -1109,6 +1185,9 @@ void find(time_task * beg) {
 	time_task* temp = beg;
 	string find_el;
 	bool fl = 0;
+	string str;
+
+	show_cursor(TRUE); // показываем курсор
 
 	if (!beg) {
 		MessageBox(0, L"Список пуст", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
@@ -1133,7 +1212,7 @@ void find(time_task * beg) {
 	SetColor(7, 5);
 	cout << "                         ";
 	gotoxy(width / 2 - 4, height / 2 - 2);
-	cin >> find_el;
+	getline(cin, find_el);
 	SetColor(7, 0);
 
 	if (find_el == "*") return; // выходим, если ввели *
@@ -1144,7 +1223,7 @@ void find(time_task * beg) {
 	cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
 
 	while (temp) {
-		if (find_el == temp->d.all_time || find_el == temp->d.cipher || find_el == temp->d.department_code || find_el == temp->d.fio || find_el == temp->d.time_cpu) {
+		if (find_el == temp->d.all_time || find_el == temp->d.cipher || find_el == temp->d.department_code || find_el == temp->d.time_cpu || find_el == temp->d.fio) {
 			fl = 1;
 			print_info(*temp, 0);
 			cout << "\n+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
@@ -1217,6 +1296,11 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 // ==========ЗАПИСЬ В ФАЙЛ==========
 int write_file(time_task * temp) {
 
+	if (!temp) {
+		MessageBox(0, L"Список пуст", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
+		return 0;
+	}
+
 	// МЕНЮ ДЛЯ ЗАПИСИ В ФАЙЛ
 	int active_file = 1,
 		k = 1;
@@ -1240,7 +1324,7 @@ int write_file(time_task * temp) {
 		"   Текстовый          ",
 		"   Бинарный           "};
 
-	int is_text = menu(active_file, items, 3);
+	int is_text = menu(active_file, items, 2);
 	if (is_text == -1) return 0;
 	// ======================
 
@@ -1254,7 +1338,7 @@ int write_file(time_task * temp) {
 
 			// проверка на повторение названия файла
 			for (k; k < SIZE_arr_filename; k++) {
-				if (write_filename == arr_filename[k].substr( 0, arr_filename[k].length() - 4) ) {
+				if (arr_filename[k].find(write_filename) != -1) {
 					throw 2;
 				}
 				if (arr_filename[k] == "") break; // если дальше пустые элементы
@@ -1281,6 +1365,12 @@ int write_file(time_task * temp) {
 
 // ==========ОПРЕДЕЛЕНИЕ ТИПА ДЛЯ ЗАПИСИ==========
 void write_filetype(time_task *temp, string filename, int el, int filetype) {
+
+	if (!temp) {
+		MessageBox(0, L"Список пуст", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
+		return;
+	}
+
 	ofstream fout; // файл в который производится запись данных
 	ofstream fout_all_bd; // файл в который производится запись названия файла
 	if (el != -1) fout_all_bd.open("mainBD.txt", ios_base::app);
@@ -1338,7 +1428,7 @@ int menu(int& active, const string items[], int num_el) {
 
 	do {
 		cls();
-		print_menu(active, items, num_el - 1);
+		print_menu(active, items, num_el);
 
 		buf = _getwch();
 		switch (buf) {
@@ -1346,7 +1436,7 @@ int menu(int& active, const string items[], int num_el) {
 			if (active > 1) active--;
 			break;
 		case down: // клавиша вниз
-			if (active < num_el - 1) active++;
+			if (active < num_el) active++;
 			break;
 		case enter: // клавиша enter
 			return active;
@@ -1357,6 +1447,7 @@ int menu(int& active, const string items[], int num_el) {
 		}
 	} while (1);
 }
+
 
 // ==========УСТАНОВКА ЦВЕТА ТЕКСТА И ФОНА==========
 void SetColor(int text, int bg) {

@@ -1,14 +1,9 @@
 ﻿  Kursach_IIP.cpp
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(157): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(172): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(180): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(188): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(195): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(202): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(341): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(367): warning C4838: преобразование из "int" в "SHORT" требует сужающего преобразования
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(592): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(604): warning C4244: =: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(830): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(1009): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(231): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(353): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(379): warning C4838: преобразование из "int" в "SHORT" требует сужающего преобразования
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(618): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(638): warning C4244: =: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(888): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(1085): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
   Kursach_IIP.vcxproj -> C:\Users\sanya\Desktop\Kurasach_IIP-master\x64\Debug\Kursach_IIP.exe
