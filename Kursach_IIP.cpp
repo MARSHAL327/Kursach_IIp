@@ -77,8 +77,8 @@ struct info {
 //===================
 struct time_task {
 	info d;
-	time_task* next;
-	time_task* prev;
+	time_task* next = 0;
+	time_task* prev = 0;
 };
 
 
@@ -118,7 +118,6 @@ int main() {
 	//========================
 	//========================
 	HANDLE hCon;
-
 	// вытаскиваем ширину и высоту
 	hCon = GetStdHandle(-12);
 	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
@@ -402,13 +401,18 @@ void input(time_task*& beg, time_task*& end, const time_task& info) {
 
 // ==========ПРОВЕРКИ НА СИМВОЛ И ДЛИНУ СТРОКИ==========
 string check_num(string field, int posX, int posY, int max_length, int is_text) {
+	/*
+	если is_text = 0 - ввод чисел
+	если is_text = 1 - ввод символов
+	если is_text = 2 - поиск (ввод чисел и ввод символов)
+	*/
 	int length = 0;
 	int pospos = 0;
 	field = "";
 	int* posarrays = new int[(__int64)max_length + 1];
 	for (int i = 0; i < max_length; i++) {
 		posarrays[i] = i;
-		if(max_length != i) field += "_"; // создаём маску
+		if(max_length != i) field += (is_text == 2 ? " " : "_"); // создаём маску
 	}
 	int pos = posarrays[pospos];
 	cout << field;
@@ -422,9 +426,17 @@ string check_num(string field, int posX, int posY, int max_length, int is_text) 
 			gotoxy(posX, posY);
 			pospos--;
 			pos = posarrays[pospos];
-			field[pos] = '_';
+			field[pos] = (is_text == 2 ? ' ' : '_');
 			cout << field;
-		} else if ( length != max_length && ch != esc && ch != enter && ch != 8 && (is_text == 1 ? !(ch >= '0' && ch <= '9') : (ch >= '0' && ch <= '9')) ) {
+		}
+		else if (length != max_length && ch != esc && ch != enter && is_text == 2 && ch != 8) {
+			length++;
+			field[pos] = ch;
+			gotoxy(posX, posY);
+			pospos++;
+			pos = posarrays[pospos];
+			cout << field;
+		} else if (length != max_length && ch != esc && ch != enter && ch != 8 && (is_text == 1 ? !(ch >= '0' && ch <= '9') : (ch >= '0' && ch <= '9'))) {
 			length++;
 			field[pos] = ch;
 			gotoxy(posX, posY);
@@ -1187,8 +1199,6 @@ void find(time_task * beg) {
 	bool fl = 0;
 	string str;
 
-	show_cursor(TRUE); // показываем курсор
-
 	if (!beg) {
 		MessageBox(0, L"Список пуст", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
 		return;
@@ -1207,23 +1217,20 @@ void find(time_task * beg) {
 	gotoxy(width / 2 - 4, height / 2 - 4);
 	cout << "Введите данные для поиска" << endl;
 	gotoxy(width / 2 - 4, height / 2 - 3);
-	cout << "Введите * для выхода     ";
-	gotoxy(width / 2 - 4, height / 2 - 2);
 	SetColor(7, 5);
-	cout << "                         ";
-	gotoxy(width / 2 - 4, height / 2 - 2);
-	getline(cin, find_el);
+	find_el = check_num(find_el, width / 2 - 4, height / 2 - 3, 15, 2);
 	SetColor(7, 0);
+	if (find_el == "-1") return;
 
-	if (find_el == "*") return; // выходим, если ввели *
 	system("cls");
-
-	cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
-	cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
-	cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
 
 	while (temp) {
 		if (find_el == temp->d.all_time || find_el == temp->d.cipher || find_el == temp->d.department_code || find_el == temp->d.time_cpu || find_el == temp->d.fio) {
+			if (fl == 0) {
+				cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
+				cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП | Процент процессорного времени |" << endl;
+				cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
+			}
 			fl = 1;
 			print_info(*temp, 0);
 			cout << "\n+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;

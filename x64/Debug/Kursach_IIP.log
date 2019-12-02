@@ -1,9 +1,9 @@
 ﻿  Kursach_IIP.cpp
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(231): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(353): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(379): warning C4838: преобразование из "int" в "SHORT" требует сужающего преобразования
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(618): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(638): warning C4244: =: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(888): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
-C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(1085): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(230): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(352): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(378): warning C4838: преобразование из "int" в "SHORT" требует сужающего преобразования
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(630): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(650): warning C4244: =: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(900): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
+C:\Users\sanya\Desktop\Kurasach_IIP-master\Kursach_IIP.cpp(1097): warning C4244: +=: преобразование "float" в "int", возможна потеря данных
   Kursach_IIP.vcxproj -> C:\Users\sanya\Desktop\Kurasach_IIP-master\x64\Debug\Kursach_IIP.exe
