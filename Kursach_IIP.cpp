@@ -251,6 +251,7 @@ time_task* first_start(time_task** beg, time_task** end) {
 		fl = 0,
 		new_line = 0;
 	num_pages = 5;
+	total_el = 0;
 
 	while (1) {
 		k = 1;
@@ -404,7 +405,7 @@ string check_num(string field, int posX, int posY, int max_length, int is_text) 
 	/*
 	если is_text = 0 - ввод чисел
 	если is_text = 1 - ввод символов
-	если is_text = 2 - поиск (ввод чисел и ввод символов)
+	если is_text = 2 - ввод чисел и ввод символов
 	*/
 	int length = 0;
 	int pospos = 0;
@@ -418,7 +419,11 @@ string check_num(string field, int posX, int posY, int max_length, int is_text) 
 	cout << field;
 	while (true) {
 		int ch = _getch();
-		if (ch == enter && length >= 1) break; // выходим, если заполнили всю маску и нажали enter
+		if (ch == enter && length >= 1) {
+			if (is_text == 0 && stoi(field) <= 0) { // если поле <= 0
+				MessageBox(0, L"Данные должны быть >= 1!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+			} else break; // выходим, если нажали enter
+		} 
 		if (ch == esc) return "-1";
 
 		if (ch == 8 && length >= 1) { // если нажали backspace
@@ -1334,11 +1339,12 @@ int write_file(time_task * temp) {
 	int is_text = menu(active_file, items, 2);
 	if (is_text == -1) return 0;
 	// ======================
-
+	show_cursor(TRUE);
 	cout << "Введите название файла:" << endl;
 	do {
 		try {
-			cin >> write_filename;
+			write_filename = check_num(write_filename, 0, 17, 20, 2);
+			if (write_filename == "-1") return 0;
 
 			for (int i = 0; write_filename[i]; i++) write_filename[i] = tolower(write_filename[i]); // приводим к нижнему регистру для правильного сравнения
 			if (write_filename == "mainbd") throw 1;
