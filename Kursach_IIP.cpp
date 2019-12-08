@@ -88,7 +88,7 @@ struct time_task {
 time_task* print(time_task* end, time_task* real_beg ,time_task* beg, int active, int edit_el, int print_count_num_pages, int print_page); // ВЫВОД ДАННЫХ
 void print_info(const time_task& t, int active); // ПЕЧАТЬ СОДЕРЖИМОГО
 void print_menu(int sym, const string items[], const int N_ITEMS); // ШАБЛОН ПЕЧАТИ МЕНЮ
-void input(time_task*& beg, time_task*& end, const time_task& info);
+void input(time_task*& beg, time_task*& end, const time_task& info); // ВЫДЕЛЕНИЕ ПАМЯТИ
 time_task input_info(time_task* beg); // ВВОД ДАННЫХ
 time_task* delete_el(time_task* beg, int num_del); // УДАЛЕНИЕ
 int read_file(string filename, time_task** beg, time_task** end); // ЧТЕНИЕ ИЗ ФАЙЛА
@@ -1378,12 +1378,6 @@ int write_file(time_task * temp) {
 
 // ==========ОПРЕДЕЛЕНИЕ ТИПА ДЛЯ ЗАПИСИ==========
 void write_filetype(time_task *temp, string filename, int el, int filetype) {
-
-	if (!temp) {
-		MessageBox(0, L"Список пуст", L"Уведомление", MB_ICONINFORMATION | MB_SETFOREGROUND);
-		return;
-	}
-
 	ofstream fout; // файл в который производится запись данных
 	ofstream fout_all_bd; // файл в который производится запись названия файла
 	if (el != -1) fout_all_bd.open("mainBD.txt", ios_base::app);
