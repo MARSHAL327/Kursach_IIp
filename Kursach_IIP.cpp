@@ -1,4 +1,9 @@
-﻿#include <iostream>
+﻿// отключаем предупреждения
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4838)
+
+#include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <string>
@@ -140,7 +145,7 @@ int main() {
 	//========================
 	//========================
 
-	SetColor(7, 0); // устанавливаем цвет текста и заднего фона чёрным
+	SetColor(0, 15); // устанавливаем цвет текста и заднего фона чёрным
 	ShowWindow(GetConsoleWindow(), SW_MAXIMIZE); // полноэкранный режим
 	show_cursor(FALSE); // убираем курсор
 	int item = 0,
@@ -157,7 +162,7 @@ int main() {
 		show_filename(width - filename.length() - 9, 0);
 
 		// выводим название раздела
-		SetColor(7, 5);
+		SetColor(0, 10);
 		gotoxy(width / 2 + 1, 3);
 		cout << "            ";
 		gotoxy(width / 2 + 1, 4);
@@ -229,9 +234,9 @@ int main() {
 void show_filename(size_t posX, size_t posY) {
 	gotoxy(posX, posY);
 	cout << "Редактируемый файл: ";
-	SetColor(7, 8);
+	SetColor(0, 8);
 	cout << " " << filename << " ";
-	SetColor(7, 0);
+	SetColor(0, 15);
 	gotoxy(0, 0);
 }
 
@@ -281,13 +286,13 @@ time_task* first_start(time_task** beg, time_task** end) {
 		gotoxy(0, 3);
 		SetColor(7, 8);
 		cout << "     ГОРЯЧИЕ КЛАВИШИ     " << endl;
-		SetColor(7, 0);
+		SetColor(0, 15);
 		cout << "del - удалить файл" << endl;
 		cout << "enter - выбрать файл" << endl;
 		cout << "esc - выйти из программы" << endl;
 
 		// выводим название раздела
-		SetColor(7, 5);
+		SetColor(0, 10);
 		gotoxy(width / 2 - 12, 3);
 		cout << sets(36);
 		gotoxy(width / 2 - 12, 4);
@@ -407,8 +412,9 @@ string check_num(string field, int posX, int posY, int max_length, int is_text) 
 	если is_text = 1 - ввод символов
 	если is_text = 2 - ввод чисел и ввод символов
 	*/
-	int length = 0;
-	int pospos = 0;
+	int length		= 0,
+		pospos		= 0,
+		space_count = 0;
 	field = "";
 	int* posarrays = new int[(__int64)max_length + 1];
 	for (int i = 0; i < max_length; i++) {
@@ -418,11 +424,32 @@ string check_num(string field, int posX, int posY, int max_length, int is_text) 
 	int pos = posarrays[pospos];
 	cout << field;
 	while (true) {
+		space_count = 0;
 		int ch = _getch();
+
 		if (ch == enter && length >= 1) {
-			if (is_text == 0 && stoi(field) <= 0) { // если поле <= 0
-				MessageBox(0, L"Данные должны быть >= 1!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
-			} else break; // выходим, если нажали enter
+			try
+			{
+				// проверки на пустоту поля
+				for (int i = 0; i < field.substr(0, length).length(); i++) {
+					if (field[i] == ' ') {
+						space_count++;
+					}
+				}
+				if (space_count == field.substr(0, length).length()) {
+					throw 1;
+				} else break;
+
+				if (is_text == 0 && stoi(field) <= 0) { // если поле <= 0
+					throw 2;
+				} else break; // выходим, если нажали enter
+			} catch (int ex) {
+				if (ex == 1) {
+					MessageBox(0, L"Поле не может быть пустым!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+				} else if (ex == 2) {
+					MessageBox(0, L"Данные должны быть >= 1!", L"Предупреждение", MB_ICONWARNING | MB_SETFOREGROUND);
+				}
+			}
 		} 
 		if (ch == esc) return "-1";
 
@@ -451,8 +478,10 @@ string check_num(string field, int posX, int posY, int max_length, int is_text) 
 		}
 	}
 
+
+
 	delete[] posarrays;
-	return field.substr(0, length);
+	return field.substr(0, length); // обрезаем строку чтобы не было символа '_'
 }
 
 // ==========ВВОД ДАННЫХ==========
@@ -462,14 +491,14 @@ time_task input_info(time_task * beg) {
 	int fl = 0;
 
 	// выводим название раздела
-	SetColor(7, 5);
+	SetColor(0, 10);
 	gotoxy(width / 2 + 1, 3);
 	cout << "                   ";
 	gotoxy(width / 2 + 1, 4);
 	cout << "    ВВОД ДАННЫХ    ";
 	gotoxy(width / 2 + 1, 5);
 	cout << "                   ";
-	SetColor(7, 0);
+	SetColor(0, 15);
 
 	gotoxy(width / 2 - 6, 8);
 	cout << "Введите шифр задания (8 символов)" << endl;
@@ -545,13 +574,13 @@ void cls() {
 
 // ==========ПЕЧАТЬ СОДЕРЖИМОГО==========
 void print_info(const time_task & t, int active) {
-	if (active) SetColor(7, 0);
+	if (active) SetColor(0, 15);
 
 	if (active == 1) {
-		SetColor(7, 0);
-		SetColor(7, 5);
+		SetColor(0, 15);
+		SetColor(0, 10);
 		cout << "| " << t.d.cipher << sets(12 - t.d.cipher.length());
-		SetColor(7, 0);
+		SetColor(0, 15);
 		cout << setw(6 + t.d.department_code.length());
 	}
 	else {
@@ -559,10 +588,10 @@ void print_info(const time_task & t, int active) {
 	}
 
 	if (active == 2) {
-		SetColor(7, 0);
-		SetColor(7, 5);
+		SetColor(0, 15);
+		SetColor(0, 10);
 		cout << t.d.department_code << sets(10 - t.d.department_code.length());
-		SetColor(7, 0);
+		SetColor(0, 15);
 		cout << setw(6 + t.d.fio.length());
 	}
 	else {
@@ -570,10 +599,10 @@ void print_info(const time_task & t, int active) {
 	}
 
 	if (active == 3) {
-		SetColor(7, 0);
-		SetColor(7, 5);
+		SetColor(0, 15);
+		SetColor(0, 10);
 		cout << t.d.fio << sets(15 - t.d.fio.length());
-		SetColor(7, 0);
+		SetColor(0, 15);
 		cout << setw(3 + t.d.all_time.length());
 	}
 	else {
@@ -581,10 +610,10 @@ void print_info(const time_task & t, int active) {
 	}
 
 	if (active == 4) {
-		SetColor(7, 0);
-		SetColor(7, 5);
+		SetColor(0, 15);
+		SetColor(0, 10);
 		cout << t.d.all_time << sets(11 - t.d.all_time.length());
-		SetColor(7, 0);
+		SetColor(0, 15);
 		cout << setw(6 + t.d.time_cpu.length());
 	}
 	else {
@@ -592,10 +621,10 @@ void print_info(const time_task & t, int active) {
 	}
 
 	if (active == 5) {
-		SetColor(7, 0);
-		SetColor(7, 5);
+		SetColor(0, 15);
+		SetColor(0, 10);
 		cout << t.d.time_cpu << sets(9 - t.d.time_cpu.length()) << "|";
-		SetColor(7, 0);
+		SetColor(0, 15);
 	}
 	else {
 		cout << t.d.time_cpu << setw(10 - t.d.time_cpu.length()) << "|";
@@ -668,17 +697,17 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 		cout << "Количество элементов на странице: ";
 
 		if (active == -1) {
-			SetColor(7, 5);
+			SetColor(15, 5);
 		} else SetColor(7, 2);
 
 		cout << " " << num_pages << " " << endl << endl;
-		SetColor(7, 0);
+		SetColor(0, 15);
 		cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
 		
 		if (active == 0) {
 			for (int i = 1; i <= 5; i++) {
 				if (i == sort_field) {
-					SetColor(7, 5);
+					SetColor(0, 10);
 				}
 				cout << sort_items[i - 1];
 
@@ -720,7 +749,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 						break;
 					}
 				}
-				SetColor(7, 0);
+				SetColor(0, 15);
 			}
 		} else {
 			cout << "| Шифр задания      Код отдела      ФИО               Общее время      Время ЦП |";
@@ -746,7 +775,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 
 			// разукрашивание выбранного элемента
 			if (i == active) {
-				SetColor(7, 5);
+				SetColor(0, 10);
 				num_del = stoi(temp->d.cipher);
 				edit_ob = temp; // редактируемый объект
 				print_info(*temp, edit_el);
@@ -754,7 +783,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			else {
 				print_info(*temp, 0);
 			}
-			SetColor(7, 0);
+			SetColor(0, 15);
 
 			cout << endl;
 			cout << "+———————————————————————————————————————————————————————————————————————————————+———————————————————————————————+" << endl;
@@ -786,7 +815,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 			cout << " n - изменить кол-во элементов на странице " << endl;
 			cout << " esc - выйти в меню                        " << endl;
 		}
-		SetColor(7, 0);
+		SetColor(0, 15);
 		
 		int height_el_num_pages = 0; // высота элементов
 		if ((page + 1 != total_pages)) {
@@ -928,7 +957,7 @@ time_task* print(time_task* end, time_task* real_beg, time_task * beg, int activ
 					int fl = 0;
 					// установка курсора в правильное место
 					gotoxy(34, 2);
-					SetColor(7, 0);
+					SetColor(0, 15);
 					cout << sets(50);
 					gotoxy(35, 2);
 					// =====================================
@@ -1210,21 +1239,21 @@ void find(time_task * beg) {
 	}
 
 	// выводим название раздела
-	SetColor(7, 5);
+	SetColor(0, 10);
 	gotoxy(width / 2 - 2, 3);
 	cout << sets(21);
 	gotoxy(width / 2 - 2, 4);
 	cout << "        ПОИСК        ";
 	gotoxy(width / 2 - 2, 5);
 	cout << sets(21);
-	SetColor(7, 0);
+	SetColor(0, 15);
 
 	gotoxy(width / 2 - 4, height / 2 - 4);
 	cout << "Введите данные для поиска" << endl;
 	gotoxy(width / 2 - 4, height / 2 - 3);
-	SetColor(7, 5);
+	SetColor(0, 10);
 	find_el = check_num(find_el, width / 2 - 4, height / 2 - 3, 15, 2);
-	SetColor(7, 0);
+	SetColor(0, 15);
 	if (find_el == "-1") return;
 
 	system("cls");
@@ -1305,7 +1334,7 @@ int read_file(string filename, time_task * *beg, time_task * *end) {
 	return 0;
 }
 
-// ==========ЗАПИСЬ В ФАЙЛ==========
+// ==========ОПРЕДЕЛЕНИЕ ТИПА ДЛЯ ЗАПИСИ==========
 int write_file(time_task * temp) {
 
 	if (!temp) {
@@ -1320,7 +1349,7 @@ int write_file(time_task * temp) {
 	string write_filename;
 
 	// выводим название раздела
-	SetColor(7, 5);
+	SetColor(0, 10);
 	gotoxy(width / 2 - 16, 3);
 	cout << sets(41);
 	gotoxy(width / 2 - 16, 4);
@@ -1376,7 +1405,7 @@ int write_file(time_task * temp) {
 	return 0;
 }
 
-// ==========ОПРЕДЕЛЕНИЕ ТИПА ДЛЯ ЗАПИСИ==========
+// ==========ЗАПИСЬ В ФАЙЛ==========
 void write_filetype(time_task *temp, string filename, int el, int filetype) {
 	ofstream fout; // файл в который производится запись данных
 	ofstream fout_all_bd; // файл в который производится запись названия файла
@@ -1419,13 +1448,13 @@ void write_filetype(time_task *temp, string filename, int el, int filetype) {
 // ==========ШАБЛОН ПЕЧАТИ МЕНЮ==========
 void print_menu(int sym, const string items[], const int N_ITEMS) {
 	for (int i = 1; i <= N_ITEMS; i++) {
-		SetColor(7, 0);
+		SetColor(0, 15);
 		gotoxy((width / 2) - 6, (height / 2) + i - 3); // ставим меню в центр
 		if (i == sym) {
-			SetColor(7, 5);
+			SetColor(0, 10);
 		}
 		cout << items[i - 1] << endl;
-		SetColor(7, 0);
+		SetColor(0, 15);
 	}
 }
 
