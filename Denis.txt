@@ -8,6 +8,8 @@
 #include <cwchar>
 #include <winuser.h>
 #include <tchar.h>
+#include <windows.h>
+
 using namespace std;
 //===============================================Global_Elemenst====================================================================================
 string File_name;
@@ -17,28 +19,29 @@ width = 0,
 height = 0,
 num_el = 0;
 //===============================================Menu_Names===================================================================================
-const string items[13] = {
-	"   Add              ",
-	"   Delete All       ",
-	"   Delete First     ",
-	"   View             ",
-	"   Read File(txt)   ",
-	"   Save File(txt)   ",
-	"   Read File(bin)   ",
-	"   Save File(bin)   ",
-	"   Search           ",
-	"   Sort             ",
-	"   My Function      ",
-	"   Delete By Number ",
-	"   Exit             " };
+const string items[14] = {
+	"   Добавление               ",
+	"   Удалить все              ",
+	"   Удалить первый           ",
+	"   Просмотр                 ",
+	"   Чтение с файла(txt)      ",
+	"   Сохранение в файл(txt)   ",
+	"   Чтение с файла(bin)      ",
+	"   Сохранение в файл(bin)   ",
+	"   Поиск                    ",
+	"   Сортировка               ",
+	"   5 Мальчиков/Девочек      ",
+	"   Удаление по номеру       ",
+	"   Редактирование           ",
+	"   Выход                    " };
 //===============================================Sort_Names===================================================================================
 const string sort_items[6] = {
-	" Name     ",
-	" Birthday ",
-	" Sex      ",
-	" Weight   ",
-	" Rank     ",
-	" Team     " };
+	" Имя           ",
+	" День Рождения ",
+	" Пол           ",
+	" Вес           ",
+	" Разряд        ",
+	" Команда       " };
 //===============================================Buttons===================================================================================
 const int up = 72,
 down = 80,
@@ -83,11 +86,14 @@ void Search(Sportsman* left);
 void Sort(Sportsman* left, int sort_active);
 void My_Function(Sportsman* left);
 Sportsman* delete_By_Number(Sportsman* left);
+Sportsman* Edit(Sportsman* left, int Edit_Field);
 //===============================================_Main_===================================================================================
 int main() {
 	SetColor(7, 0);
 	Sportsman* left = 0,
 		* right = 0;
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
 	//========================================Width/height_OF_Window===========================================================================
 	HANDLE hCon;
 	hCon = GetStdHandle(-12);
@@ -103,10 +109,11 @@ int main() {
 	int current = 1;
 	int sort_active = 0;
 	int current_sort = 1;
+	int Ed = 0;
 	Read_File("1.txt", &left, &right);
 	while (1)
 	{
-		switch (menu(current, items, 13))
+		switch (menu(current, items, 14))
 		{
 		case 1:
 			system("cls");
@@ -135,25 +142,25 @@ int main() {
 
 		case 5:
 			system("cls");
-			cout << "Choose Name of the File" << endl;
+			cout << "Введите название файла" << endl;
 			cin >> File_name;
 			Read_File(File_name, &left, &right);
 			break;
 		case 6:
 			system("cls");
-			cout << "Choose Name of the File" << endl;
+			cout << "Введите название файла" << endl;
 			cin >> File_name;
 			Write_File(File_name, left);
 			break;
 		case 7:
 			system("cls");
-			cout << "Choose Name of the File" << endl;
+			cout << "Введите название файла" << endl;
 			cin >> File_name;
 			Read_Bin_File(File_name, &left, &right);
 			break;
 		case 8:
 			system("cls");
-			cout << "Choose Name of the File" << endl;
+			cout << "Введите название файла" << endl;
 			cin >> File_name;
 			Write_Bin_File(File_name, left);
 			break;
@@ -165,19 +172,25 @@ int main() {
 		case 10:
 			system("cls");
 			sort_active = menu(current_sort, sort_items, 6);
-			MessageBox(0, "It was sorted!", "Information", MB_ICONINFORMATION | MB_SETFOREGROUND);
+			MessageBox(0, "Отсортировано!", "Information", MB_ICONINFORMATION | MB_SETFOREGROUND);
 			Sort(left, sort_active);
 			break;
 		case 11:
 			system("cls");
 			My_Function(left);
 			break;
-			case 12:
+		case 12:
 				system("cls");
 				left = delete_By_Number(left);
 				break;
+		case 13: 
+			system("cls");
+			Ed = menu(current_sort, sort_items, 6);
+			system("cls");
+			 Edit(left, Ed);
+			break;
 		case -1:
-		case 13:
+		case 14:
 			return 0;
 			break;
 		}
@@ -205,7 +218,7 @@ Sportsman* Add_first(const Sportsman& S) {
 //=============================================Delete=================================================================================
 Sportsman* Del(Sportsman* left) {
 	Sportsman* temp;
-	if (!left) { cout << "Empty" << endl; return 0; }
+	if (!left) { cout << "Пусто" << endl; return 0; }
 	else {
 		temp = left;
 		left = left->next;
@@ -218,7 +231,7 @@ Sportsman* Del(Sportsman* left) {
 Sportsman Information() {
 	struct Sportsman S;
 	boolean logic = 1;
-	cout << "Choose Name(15 Symbols)" << endl;
+	cout << "Введите имя(15 Символов)" << endl;
 	int max_length = 15;
 	do {
 		try {
@@ -229,12 +242,12 @@ Sportsman Information() {
 			break;
 		}	
 		catch(int Y){
-		MessageBox(0, "Wrong Name", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+		MessageBox(0, "Неверное имя", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
 		gotoxy(0, 1);
 		clearRow(2);
 		}
 	} while (true);
-	cout << "Choose Birthday (1900-2010)" << endl;
+	cout << "Введите День Рождения (1900-2010)" << endl;
 	do {
 		int length = 0;
 		int pospos = 0;
@@ -268,26 +281,26 @@ Sportsman Information() {
 		if (Year % 4 == 0)
 			days_in_month[2] = 29;
 		if ((Month < 1) || (Month > 12))
-			MessageBox(0, "Wrong Month!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			MessageBox(0, "Нерпавильный месяц!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
 		else if ((Day < 1) || (Day > days_in_month[Month]))
-			MessageBox(0, "Wrong Day!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			MessageBox(0, "Неправильный день!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
 		else if ((Year > 2010) || (Year < 1900))
-			MessageBox(0, "Wrong Year!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			MessageBox(0, "Неправильный год!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
 		else break;
 		gotoxy(0, 3);
 		clearRow(4);
 	} while (true);
-	cout << "\nChoose Sex (M/F)" << endl;
+	cout << "\nВведите пол(М/Ж)" << endl;
 	do {
 		getline(cin, S.D.Sex);
-		if ((S.D.Sex == "M") || (S.D.Sex == "F"))
+		if ((S.D.Sex == "М") || (S.D.Sex == "Ж"))
 			break;
 		else
-			MessageBox(0, "There is no Sex like that!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			MessageBox(0, "Неверный пол!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
 		gotoxy(0, 5);
 		clearRow(6);
 	} while (true);
-	cout << "Choose Weight (40..150)" << endl;
+	cout << "Введите вес (40..150)" << endl;
 	do {
 		try {
 			getline(cin, S.D.Weight);
@@ -304,13 +317,13 @@ Sportsman Information() {
 		}
 		catch (int X) {
 			if (X == 1) {
-				MessageBox(0, "Wrong Weight", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+				MessageBox(0, "Неверный вес", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
 			}
 			gotoxy(0, 7);
 			clearRow(8);
 		}
 	} while (true);
-	cout << "Choose Rank (1..5)" << endl;
+	cout << "Введите разряд(1..5)" << endl;
 	do {
 		try {
 			getline(cin, S.D.Rank);
@@ -325,19 +338,19 @@ Sportsman Information() {
 		}
 		catch (int X) {
 			if (X == 1) {
-				MessageBox(0, "Wrong Rank", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+				MessageBox(0, "Неверный разряд", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
 			}
 			gotoxy(0, 9);
 			clearRow(10);
 		}
 	} while (true);
-	cout << "Choose Team (15 Symbols)" << endl;
+	cout << "Введите название команды(15 символов)" << endl;
 	do {
 		getline(cin, S.D.Team);
 		if (S.D.Team.length() <= max_length)
 			break;
 		else
-			MessageBox(0, "To many Symbols!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND); {
+			MessageBox(0, "Сдишком много символов!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND); {
 			gotoxy(0, 11);
 			clearRow(12); }
 	} while (true);
@@ -372,7 +385,7 @@ void SetColor(int text, int bg) {
 void print_menu(int sym, const string items[], const int N_ITEMS) {
 	for (int i = 1; i <= N_ITEMS; i++) {
 		SetColor(7, 0);
-		gotoxy((width / 2) - 6, (height / 2) + i - 3);
+		gotoxy((width ) - 6, (height) + i - 3);
 		if (i == sym) {
 			SetColor(7, 12);
 		}
@@ -423,11 +436,11 @@ void Print(const Sportsman& S) {
 	else {
 		cout << " " << ++num_el << "   ";
 	}
-	cout << "|" << S.D.Name << setw(30 - S.D.Name.length()) << " | ";
-	cout << S.D.Birthday << " | ";
+	cout << "|" << S.D.Name << setw(29 - S.D.Name.length()) << "   | ";
+	cout <<S.D.Birthday << "  | ";
 	cout << " " << S.D.Sex << "  | ";
-	cout << S.D.Weight << setw(9 - S.D.Weight.length()) << " | ";
-	cout << S.D.Rank << "    | ";
+	cout << S.D.Weight << setw(6 - S.D.Weight.length()) << "| ";
+	cout << S.D.Rank << "      | ";
 	cout << S.D.Team << setw(20 - S.D.Team.length()) << " | " << endl;
 }
 
@@ -453,13 +466,13 @@ void Watch(Sportsman* left) {
 
 		if (count_el_on_page != total_elements) {
 			cout << " №   " << "|";
-			cout << "Name" << setw(25) << "|";
-			cout << " Birthday" << setw(4) << "|";
-			cout << " Sex " << "|";
-			cout << " Weight " << "|";
-			cout << " Rank " << "|";
-			cout << " Team " << setw(14) << "|" << endl;
-			cout << "==========================================================================================" << endl;
+			cout << "ФИО" << setw(25) << "|";
+			cout << "День Рождения" << setw(1) << "|";
+			cout << " Пол " << "|";
+			cout << " Вес " << "|";
+			cout << " Разряд " << "|";
+			cout << " Команда" << setw(12) << "|" << endl;
+			cout << "=========================================================================================" << endl;
 
 			for (; temp; temp = temp->next) {
 				if (count_el_on_page == (page - 1) * 10 + 1) {
@@ -483,8 +496,8 @@ void Watch(Sportsman* left) {
 					break;
 				}
 			}
-			cout << "==========================================================================================" << endl;
-			cout << "               " << "Page " << page << " of " << setprecision(0) << total_pages;
+			cout << "=========================================================================================" << endl;
+			cout << "               " << "Страница " << page << " из " << setprecision(0) << total_pages;
 		}
 		int control = _getwch();
 		if (control == esc) {
@@ -534,7 +547,7 @@ void Read_File(string File_name, Sportsman** left, Sportsman** right) {
 	ifstream File_in;
 	File_in.open(File_name);
 	if (!File_in) {
-		MessageBox(0, "Trere is no File!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
+		MessageBox(0, "Нет файла!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
 		return;
 	}
 	Sportsman S;
@@ -560,7 +573,7 @@ void Write_File(string File_name, Sportsman* left) {
 	ofstream File_out;
 	File_out.open(File_name);
 	if (!File_out) {
-		MessageBox(0, "Trere is no File!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
+		MessageBox(0, "Нет файла!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
 		return;
 	}
 	while (left) {
@@ -582,7 +595,7 @@ int Read_Bin_File(string filename, Sportsman** left, Sportsman** right) {
 	file_read.open(filename, ios::binary);
 
 	if (!file_read) {
-		MessageBox(0, "There is no file!", "Error", MB_ICONERROR | MB_SETFOREGROUND);
+		MessageBox(0, "Нет файла!", "Error", MB_ICONERROR | MB_SETFOREGROUND);
 		return 1;
 	}
 	file_read.seekg(ios_base::beg);
@@ -608,7 +621,7 @@ void Write_Bin_File(string File_name, Sportsman* left) {
 	ofstream File_Bin_Write;
 	File_Bin_Write.open(File_name, ios::binary | ios::out);
 	if (!File_Bin_Write) {
-		MessageBox(0, "Trere is no File!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
+		MessageBox(0, "Нет файла!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
 		return;
 	}
 	while (left) {
@@ -620,12 +633,12 @@ void Write_Bin_File(string File_name, Sportsman* left) {
 }
 //==================================================Search==========================================================================================
 void Search(Sportsman* left) {
-	cout << "Choose Information to Search" << endl;
+	cout << "Введите элемент, который хотите найти" << endl;
 	string search_sm;
 	getline(cin, search_sm);
 	Sportsman* temp = left;
 	int count = 0;
-	cout << "====================================================================================" << endl;
+	cout << "=========================================================================================" << endl;
 	while (temp) {
 		if (search_sm == temp->D.Name || search_sm == temp->D.Birthday || search_sm == temp->D.Sex || search_sm == temp->D.Weight || search_sm == temp->D.Team || search_sm == temp->D.Rank) {
 			Print(*temp);
@@ -634,8 +647,8 @@ void Search(Sportsman* left) {
 		temp = temp->next;
 	}
 	if (count == 0)
-		cout << "Nothing found" << endl;;
-	cout << "====================================================================================" << endl;
+		cout << "Ничего не найдено" << endl;;
+	cout << "=========================================================================================" << endl;
 }
 //====================================================Sort=================================================================================================
 void Sort(Sportsman* left, int sort_active) {
@@ -745,7 +758,7 @@ void Sort(Sportsman* left, int sort_active) {
 //======================================================My_Function===============================================================================
 void My_Function(Sportsman* left) {
 	if (!left) {
-		MessageBox(0, "Trere is no File!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
+		MessageBox(0, "Пусто!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
 		return;
 	}
 	Sportsman* temp = left;
@@ -774,7 +787,7 @@ void My_Function(Sportsman* left) {
 	temp = left;
 	int fl = 0;
 	while (temp) {
-		if (temp->D.Sex == "M") {
+		if (temp->D.Sex == "М") {
 			fl = 1;
 			break;
 		}
@@ -782,18 +795,18 @@ void My_Function(Sportsman* left) {
 	}
 	temp = left;
 	if (fl == 0)
-		cout << "No Men" << endl;
+		cout << "Нет мальчиков" << endl;
 	else {
-		cout << "Most Man's Weight For Every Team" << endl;
-		cout << "==========================================================================================" << endl;
+		cout << "Самые тяжелые мальчики" << endl;
+		cout << "=========================================================================================" << endl;
 		while (count_teams <= count) {
-			if (temp->D.Sex == "M" && count_MF < 5 && Mas_Teams[count_teams] == temp->D.Team) {
+			if (temp->D.Sex == "М" && count_MF < 5 && Mas_Teams[count_teams] == temp->D.Team) {
 				Print(*temp);
 				count_MF++;
 			}
 			temp = temp->next;
 			if (temp == NULL) {
-				if (count_MF > 0) cout << "==========================================================================================" << endl;
+				if (count_MF > 0) cout << "=========================================================================================" << endl;
 				count_MF = 0;
 				count_teams++;
 				temp = left;
@@ -810,7 +823,7 @@ void My_Function(Sportsman* left) {
 	temp = left;
 	fl = 0;
 	while (temp) {
-		if (temp->D.Sex == "F") {
+		if (temp->D.Sex == "Ж") {
 			fl = 1;
 			break;
 		}
@@ -818,18 +831,18 @@ void My_Function(Sportsman* left) {
 	}
 	temp = left;
 	if (fl == 0)
-		cout << "No Girls" << endl;
+		cout << "Нет девушек" << endl;
 	else {
-		cout << "The Oldest Girl For Every Team" << endl;
-		cout << "====================================================================================" << endl;
+		cout << "Самые взрослые девушки" << endl;
+		cout << "=========================================================================================" << endl;
 		while (count_teams <= count) {
-			if (temp->D.Sex == "F" && count_MF < 5 && Mas_Teams[count_teams] == temp->D.Team) {
+			if (temp->D.Sex == "Ж" && count_MF < 5 && Mas_Teams[count_teams] == temp->D.Team) {
 				Print(*temp);
 				count_MF++;
 			}
 			temp = temp->next;
 			if (temp == NULL) {
-				if (count_MF > 0)  cout << "====================================================================================" << endl;
+				if (count_MF > 0)  cout << "=========================================================================================" << endl;
 				count_MF = 0;
 				count_teams++;
 				temp = left;
@@ -846,19 +859,20 @@ Sportsman* delete_By_Number(Sportsman * left) {
 	Sportsman* temp;
 	Sportsman* buf;
 	if (!left) {
-		MessageBox(0, "It's Empty", "Warning", MB_ICONINFORMATION | MB_SETFOREGROUND);
+		MessageBox(0, "Пусто", "Warning", MB_ICONINFORMATION | MB_SETFOREGROUND);
 		return left;
 	}
-	cout << "Choose Number To Delete" << endl;
+	cout << "Введите номер для удаления" << endl;
 	cin >> Number_To_Delete;
 
 	if (total_elements < Number_To_Delete) {
-		MessageBox(0, "Trere is no Number Like That!", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
+		MessageBox(0, "Нет такого номера", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
 		return left;
 	}
 	temp = left;
 	if (left->next == 0 && Number_To_Delete == 1) {
 		delete temp;
+		total_elements--;
 		return 0;
 	}
 	int i = 1;
@@ -870,14 +884,14 @@ Sportsman* delete_By_Number(Sportsman * left) {
 			if (temp->prev == 0) {
 				buf->prev = 0;
 				delete temp;
+				total_elements--;
 				return buf;
 			}
-
 			if (buf != 0) buf->prev = temp->prev;
-
 			buf = temp->prev;
 			buf->next = temp->next;
 			delete temp;
+			total_elements--;
 			return left;
 		}
 		temp = temp->next;
@@ -886,4 +900,169 @@ Sportsman* delete_By_Number(Sportsman * left) {
 	MessageBox(0, "Error!", "Error", MB_ICONERROR | MB_SETFOREGROUND);
 	return left;
 }
-//===============================================================================================================================
+//=============================================================Edit==================================================================
+Sportsman* Edit(Sportsman* left, int Edit_Field) {
+	int Edit_Number = 0;
+	Sportsman* temp = left;
+	int i = 0;
+	boolean logic = 1;
+	if (!left) {
+		MessageBox(0, "Пусто", "Warning", MB_ICONINFORMATION | MB_SETFOREGROUND);
+		return left;
+	}
+	cout << "Введите номер для редактирования" << endl;
+	cin>> Edit_Number;
+
+	if (!cin || total_elements < Edit_Number) {
+		MessageBox(0, "Неверный номер", "ERROR", MB_ICONERROR | MB_SETFOREGROUND);
+		return left;
+	}
+
+	for (i = 1; i <Edit_Number; i++)
+		temp = temp->next;	
+	int max_length = 15;
+	switch (Edit_Field){
+	case 1: 
+		cout << "Введите имя(15 символов)" << endl;
+		cin.ignore();
+		do {
+			try {
+				getline(cin, temp->D.Name);
+				for (int i = 0; i < temp->D.Name.length(); i++)
+					if ((temp->D.Name[i] >= '0' && temp->D.Name[i] <= '9') || temp->D.Name.length() > max_length)
+						throw 1;
+				break;
+			}
+			catch (int Y) {
+				MessageBox(0, "Неверное имя", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+				gotoxy(0, 3);
+				clearRow(4);
+			}
+		} while (true);
+
+		break;
+	case 2:
+		cout << "Введите День Рождения (1900-2010)" << endl;
+		cin.ignore();
+		do {
+			int length = 0;
+			int pospos = 0;
+			int posarrays[8] = { 0, 1, 3, 4, 6, 7, 8, 9 };
+			int pos = posarrays[pospos];
+			temp->D.Birthday = "__.__.____";
+			cout << temp->D.Birthday;
+			while (length != 8) {
+				int ch = _getch();
+				if (ch == 8 && length != 0) {
+					length--;
+					temp->D.Birthday[pos - ((length == 3 || length == 1) ? 2 : 1)] = '_';
+					gotoxy(0, 3);
+					pospos--;
+					pos = posarrays[pospos];
+					cout << temp->D.Birthday;
+				}
+				else if (ch >= '0' && ch <= '9') {
+					length++;
+					temp->D.Birthday[pos] = ch;
+					gotoxy(0, 3);
+					pospos++;
+					pos = posarrays[pospos];
+					cout << temp->D.Birthday;
+				}
+			}
+			int Day = stoi(temp->D.Birthday.substr(0, 2));
+			int Month = stoi(temp->D.Birthday.substr(3, 2));
+			int Year = stoi(temp->D.Birthday.substr(6, 4));
+			int days_in_month[] = { 0,31,28,31,30,31,30,31,31,30,31,30,31 };
+			if (Year % 4 == 0)
+				days_in_month[2] = 29;
+			if ((Month < 1) || (Month > 12))
+				MessageBox(0, "Неверный месяц!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			else if ((Day < 1) || (Day > days_in_month[Month]))
+				MessageBox(0, "Неверный день !", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			else if ((Year > 2010) || (Year < 1900))
+				MessageBox(0, "Неверный год !", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			else break;
+			gotoxy(0, 3);
+			clearRow(4);
+		} while (true);
+		break;
+	case 3:
+		cout << "Введите пол  (М/Ж)" << endl;
+		cin.ignore();
+		do {			
+			getline(cin, temp->D.Sex);
+			if ((temp->D.Sex == "М") || (temp->D.Sex == "Ж"))
+				break;
+			else
+				MessageBox(0, "Неверный пол!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+			gotoxy(0, 3);
+			clearRow(4);
+		} while (true);
+		break;
+	case 4:
+		cout << "Введите вес (40..150)" << endl;
+		cin.ignore();
+		do {
+			try {
+				getline(cin, temp->D.Weight);
+				int Max_Weight = 3;
+				int count = 0;
+				for (int i = 0; i < temp->D.Weight.length(); i++) {
+					if (!(temp->D.Weight[i] >= '0' && temp->D.Weight[i] <= '9'))
+						throw 1;
+				}
+				if (!(stoi(temp->D.Weight) >= 40 && stoi(temp->D.Weight) <= 150))
+					throw 1;
+				break;
+			}
+			catch (int X) {
+				if (X == 1) {
+					MessageBox(0, "Неверный вес", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+				}
+				gotoxy(0, 3);
+				clearRow(4);
+			}
+		} while (true);
+		break;
+	case 5:
+		cout << "Введите  Разряд (1..5)" << endl;
+		cin.ignore();
+		do {
+			getline(cin, temp->D.Rank);
+			try {
+				for (int i = 0; i < temp->D.Rank.length(); i++) {
+					if (!(temp->D.Rank[i] >= '0' && temp->D.Rank[i] <= '9'))
+						throw 1;
+				}
+				if (!(stoi(temp->D.Rank) >= 1 && stoi(temp->D.Rank) <= 5))
+					throw 1;
+				break;
+			}
+			catch (int X) {
+				if (X == 1) {
+					MessageBox(0, "Неверный разряд ", "Warning", MB_ICONWARNING | MB_SETFOREGROUND);
+				}
+				gotoxy(0, 3);
+				clearRow(4);
+			}
+		} while (true);
+		break;
+	case 6:
+		cout << "Введите команду (15 символов)" << endl;
+		cin.ignore();
+		do {
+			getline(cin, temp->D.Team);
+			if (temp->D.Team.length() <= max_length)
+				break;
+			else
+				MessageBox(0, "Слишком много символов!", "Warning", MB_ICONWARNING | MB_SETFOREGROUND); {
+				gotoxy(0, 3);
+				clearRow(4); }
+		} while (true);
+		break;
+	}
+	system("pause");
+	cout<<endl;
+	return left;
+}
